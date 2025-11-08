@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:background="#F2F2F2"
+android:padding="16dp">
+
+    <!-- Centered Form Rectangle -->
+    <LinearLayout
+    android:id="@+id/form_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerInParent="true"
+    android:background="@drawable/rounded_rectangle"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+        <!-- Vertical Login Text -->
+        <TextView
+        android:id="@+id/login_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:textSize="29sp"
+        android:textColor="#FFFFFF"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="26dp" />
+
+        <!-- Email Field -->
+        <EditText
+        android:id="@+id/email_login_field"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:textColorHint="@color/hafif_gri"
+        android:textColor="@color/Gray0"
+        android:inputType="textEmailAddress"
+        android:layout_marginBottom="16dp"
+        android:padding="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:layout_gravity="center_horizontal"/>
+
+        <!-- Password Field -->
+        <EditText
+        android:id="@+id/password_login_field"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:textColorHint="@color/hafif_gri"
+        android:textColor="@color/Gray0"
+        android:inputType="textPassword"
+        android:layout_marginBottom="16dp"
+        android:padding="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:layout_gravity="center_horizontal"/>
+
+        <!-- Login Button -->
+        <Button
+        android:id="@+id/login_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:textColor="#FFFFFF"
+        android:background="#2196F3"
+        android:layout_marginBottom="16dp"
+        android:layout_gravity="center_horizontal"/>
+
+        <!-- Register Link -->
+        <TextView
+        android:id="@+id/register_link"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Don't have an account? Register"
+        android:textColor="#2196F3"
+        android:layout_gravity="center_horizontal"
+        android:onClick="navigateToRegister"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

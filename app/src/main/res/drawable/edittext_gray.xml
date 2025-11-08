@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/chatbot_edittext_bg"/>
+    <corners android:radius="65dp"/> <!-- Rounded corners (you can adjust the radius) -->
+    <stroke android:color="#DDDDDD" android:width="1dp"/> <!-- Border color and width -->
+</shape>
+
+

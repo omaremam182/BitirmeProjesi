@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">MyProjcet</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_chat">chat</string>
+    <string name="menu_test">Test</string>
+    <string name="menu_settings">Settings</string>
+    <string name="default_web_client_id">873880612341-savfukppoquir9fpstcmgh7dpoap5df5.apps.googleusercontent.com</string>
+</resources>
