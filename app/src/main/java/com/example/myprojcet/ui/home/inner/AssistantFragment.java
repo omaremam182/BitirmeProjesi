@@ -121,7 +121,8 @@ public class AssistantFragment extends Fragment {
     }
     private void openAppByName(String spokenText) {
         PackageManager pm = requireContext().getPackageManager();
-        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        List<ApplicationInfo> apps = pm.getInstalledApplications(
+                PackageManager.GET_META_DATA | PackageManager.MATCH_ALL);
 
         String lowerText = spokenText.toLowerCase(Locale.ROOT);
 
