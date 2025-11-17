@@ -83,7 +83,7 @@ public class ChatFragment extends Fragment {
                 conversationHistory.add(userMsg);
 
                 JSONObject json = new JSONObject();
-                json.put("model", "openai/gpt-oss-20b");
+                json.put("model", "qwen/qwen3-32b");
                 JSONArray messagesArray = new JSONArray(conversationHistory);
                 json.put("messages", messagesArray);
 

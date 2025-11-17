@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
@@ -51,7 +52,7 @@ public class AssistantFragment extends Fragment {
                 startSpeechToText();
             } else {
                 requestAudioPermission();
-                startSpeechToText();
+
             }
         });
 
@@ -61,12 +62,12 @@ public class AssistantFragment extends Fragment {
     private void initTextToSpeech() {
         tts = new TextToSpeech(getContext(), status -> {
             if (status == TextToSpeech.SUCCESS) {
+
                 int result = tts.setLanguage(new Locale("tr", "TR"));
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Toast.makeText(getContext(), "Türkçe dili desteklenmiyor!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Telefonunuz Türkçe dilini desteklemiyor!", Toast.LENGTH_SHORT).show();
                 } else {
 
-                    // speakText("Merhaba, size nasıl yardımcı olabilirim?");
                 }
             }
         });
@@ -80,6 +81,7 @@ public class AssistantFragment extends Fragment {
         ActivityCompat.requestPermissions(requireActivity(),
                 new String[]{Manifest.permission.RECORD_AUDIO},
                 REQUEST_RECORD_AUDIO_PERMISSION);
+
     }
 
     private void startSpeechToText() {
@@ -119,6 +121,7 @@ public class AssistantFragment extends Fragment {
             speakText("Üzgünüm, bu komutu anlayamadım.");
         }
     }
+
     private void openAppByName(String spokenText) {
         PackageManager pm = requireContext().getPackageManager();
         List<ApplicationInfo> apps = pm.getInstalledApplications(
@@ -127,14 +130,13 @@ public class AssistantFragment extends Fragment {
         String lowerText = spokenText.toLowerCase(Locale.ROOT);
 
         for (ApplicationInfo appInfo : apps) {
-
             String appName = pm.getApplicationLabel(appInfo).toString().toLowerCase(Locale.ROOT);
 
             if (lowerText.contains(appName)) {
                 Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
                 if (launchIntent != null) {
                     startActivity(launchIntent);
-                    speakText(appName + " açılıyor.");
+//                    speakText(appName + " açılıyor.");
                     return;
                 }
             }
@@ -142,6 +144,9 @@ public class AssistantFragment extends Fragment {
 
         speakText("Uygulama bulunamadı: " + spokenText);
     }
+
+
+
 
     private void speakText(String text) {
         if (tts != null) {
