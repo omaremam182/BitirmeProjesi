@@ -6,11 +6,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 
 public class ChatDatabase extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "chatbot.db";
+    private static final String DATABASE_NAME = "my_chatbot.db";
     private static final int DATABASE_VERSION = 1;
 
     public ChatDatabase(Context context) {
@@ -20,12 +21,12 @@ public class ChatDatabase extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
 
-        // Users table
+
         db.execSQL("CREATE TABLE users (" +
                 "user_email TEXT PRIMARY KEY, " +
                 "name TEXT)");
 
-        // Conversations table
+
         db.execSQL("CREATE TABLE conversations (" +
                 "conv_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_email TEXT, " +
@@ -34,7 +35,7 @@ public class ChatDatabase extends SQLiteOpenHelper {
                 "last_message_sended_at LONG, " +
                 "FOREIGN KEY (user_email) REFERENCES users(user_email))");
 
-        // Messages table
+
         db.execSQL("CREATE TABLE messages (" +
                 "msg_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "conv_id INTEGER, " +
@@ -78,8 +79,41 @@ public class ChatDatabase extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("user_email", userEmail);
+        cv.put("conv_title", "New Conversation");
         cv.put("created_at", System.currentTimeMillis());
+        cv.put("last_message_sended_at", System.currentTimeMillis());
         return db.insert("conversations", null, cv);
+    }
+
+    public void updateConvTitle(long convId, String newConvTitle) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("conv_title", newConvTitle);
+
+        int rowsAffected = db.update("conversations", cv, "conv_id = ?", new String[]{String.valueOf(convId)});
+
+        if (rowsAffected > 0) {
+            Log.d("DB Update", "Conversation title updated successfully!");
+        } else {
+            Log.d("DB Update", "No conversation found with the given ID.");
+        }
+
+        db.close();
+    }
+    public void updateLastMessageTimestamp(long convId, long timestamp) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("last_message_sended_at", timestamp);
+
+        int rowsAffected = db.update("conversations", cv, "conv_id = ?", new String[]{String.valueOf(convId)});
+
+        if (rowsAffected > 0) {
+            Log.d("DB Update", "Last message timestamp updated successfully!");
+        } else {
+            Log.d("DB Update", "No conversation found with the given ID.");
+        }
+
+        db.close();
     }
 
     // ---------------------------------------
@@ -91,8 +125,10 @@ public class ChatDatabase extends SQLiteOpenHelper {
         cv.put("conv_id", convId);
         cv.put("sender", sender);
         cv.put("message", message);
-        cv.put("timestamp", System.currentTimeMillis());
+        long myCurrentTime = System.currentTimeMillis();
+        cv.put("timestamp",myCurrentTime);
         db.insert("messages", null, cv);
+        updateLastMessageTimestamp(convId,myCurrentTime);
     }
 
     public Cursor getConversationMessages(long convId) {

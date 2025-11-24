@@ -1,5 +1,6 @@
 package com.example.myprojcet.ui.home.inner;
 
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,6 +41,8 @@ public class ChatFragment extends Fragment {
     private ChatAdapter adapter;
     private ChatDatabase my_db;
     long conversation_id;
+    Cursor cursor;
+    boolean isUser;
     private List<Message> messages = new ArrayList<>();
     private List<JSONObject> conversationHistory = new ArrayList<>();
     private OkHttpClient client = new OkHttpClient();
@@ -64,9 +67,32 @@ public class ChatFragment extends Fragment {
             my_db.insertUser(u_email, "");
         }
 
-        // Burada degisiklik yapilacak!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        conversation_id = my_db.createConversation(u_email);
+        if (getArguments() != null) {
+            conversation_id = getArguments().getLong("conv_id");
+        }else
+        {
+            conversation_id = my_db.createConversation(u_email);
+        }
 
+        cursor = my_db.getConversationMessages(conversation_id);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String messageText = cursor.getString(cursor.getColumnIndex("message"));
+                String sender = cursor.getString(cursor.getColumnIndex("sender"));
+                long timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"));
+
+                isUser =  sender.equals("user");
+
+                messages.add(new Message(messageText, isUser,timestamp));
+
+            } while (cursor.moveToNext());
+        }
+
+        // لا تنسى غلق الـ cursor بعد الانتهاء
+        if (cursor != null) {
+            cursor.close();
+        }
 
         adapter = new ChatAdapter(messages);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -86,7 +112,7 @@ public class ChatFragment extends Fragment {
     }
 
     private void addMessage(String text, boolean isUser) {
-        messages.add(new Message(text, isUser));
+        messages.add(new Message(text, isUser,System.currentTimeMillis()));
         adapter.notifyItemInserted(messages.size() - 1);
         recyclerView.scrollToPosition(messages.size() - 1);
     }
