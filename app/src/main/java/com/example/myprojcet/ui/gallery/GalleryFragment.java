@@ -11,9 +11,10 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.myprojcet.databinding.FragmentGalleryBinding;
+import com.example.myprojcet.ui.home.inner.ChatDatabase;
 
 public class GalleryFragment extends Fragment {
-
+    ChatDatabase my_db ;
     private FragmentGalleryBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -24,8 +25,7 @@ public class GalleryFragment extends Fragment {
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textGallery;
-        galleryViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+
         return root;
     }
 

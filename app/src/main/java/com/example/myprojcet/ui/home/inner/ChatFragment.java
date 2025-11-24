@@ -24,6 +24,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import com.example.myprojcet.BuildConfig;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 
 public class ChatFragment extends Fragment {
@@ -36,6 +38,8 @@ public class ChatFragment extends Fragment {
     private EditText input;
     private ImageButton sendButton;
     private ChatAdapter adapter;
+    private ChatDatabase my_db;
+    long conversation_id;
     private List<Message> messages = new ArrayList<>();
     private List<JSONObject> conversationHistory = new ArrayList<>();
     private OkHttpClient client = new OkHttpClient();
@@ -52,6 +56,18 @@ public class ChatFragment extends Fragment {
         input = view.findViewById(R.id.edittext_home);
         sendButton = view.findViewById(R.id.sendButton);
 
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String u_email = user.getEmail();
+        my_db = new ChatDatabase(getContext());
+
+        if(!my_db.isEmailExists(u_email)){
+            my_db.insertUser(u_email, "");
+        }
+
+        // Burada degisiklik yapilacak!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        conversation_id = my_db.createConversation(u_email);
+
+
         adapter = new ChatAdapter(messages);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
@@ -60,8 +76,9 @@ public class ChatFragment extends Fragment {
             String text = input.getText().toString().trim();
             if (!text.isEmpty()) {
                 addMessage(text, true);
+                my_db.insertMessage(conversation_id,"user",text);
                 input.setText("");
-                sendMessageToGroq(text);
+                sendMessageToGroq(text,conversation_id);
             }
         });
 
@@ -74,7 +91,7 @@ public class ChatFragment extends Fragment {
         recyclerView.scrollToPosition(messages.size() - 1);
     }
 
-    private void sendMessageToGroq(String userMessage) {
+    private void sendMessageToGroq(String userMessage,long conv_id) {
         new Thread(() -> {
             try {
                 JSONObject userMsg = new JSONObject();
@@ -83,7 +100,7 @@ public class ChatFragment extends Fragment {
                 conversationHistory.add(userMsg);
 
                 JSONObject json = new JSONObject();
-                json.put("model", "qwen/qwen3-32b");
+                json.put("model", "openai/gpt-oss-20b");
                 JSONArray messagesArray = new JSONArray(conversationHistory);
                 json.put("messages", messagesArray);
 
@@ -112,6 +129,9 @@ public class ChatFragment extends Fragment {
                 JSONObject botMsg = new JSONObject();
                 botMsg.put("role", "assistant");
                 botMsg.put("content", reply);
+
+                my_db.insertMessage(conv_id,"bot",reply);
+
                 conversationHistory.add(botMsg);
 
                 requireActivity().runOnUiThread(() -> addMessage(reply, false));

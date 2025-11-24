@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class ChatDatabase extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "chat.db";
+    private static final String DATABASE_NAME = "chatbot.db";
     private static final int DATABASE_VERSION = 1;
 
     public ChatDatabase(Context context) {
@@ -29,7 +29,9 @@ public class ChatDatabase extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE conversations (" +
                 "conv_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_email TEXT, " +
+                "conv_title TEXT, "+
                 "created_at LONG, " +
+                "last_message_sended_at LONG, " +
                 "FOREIGN KEY (user_email) REFERENCES users(user_email))");
 
         // Messages table
@@ -42,6 +44,14 @@ public class ChatDatabase extends SQLiteOpenHelper {
                 "FOREIGN KEY (conv_id) REFERENCES conversations(conv_id))");
     }
 
+    public boolean isEmailExists(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM users WHERE user_email = ?", new String[]{email});
+        boolean exists = cursor.getCount() > 0;
+        cursor.close();
+        db.close();
+        return exists;
+    }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS messages");
@@ -89,5 +99,11 @@ public class ChatDatabase extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM messages WHERE conv_id = ? ORDER BY timestamp ASC",
                 new String[]{String.valueOf(convId)});
+    }
+
+    public Cursor getAllConversations(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM conversations WHERE user_email = ? ORDER BY last_message_sended_at DESC",
+                new String[]{email});
     }
 }
