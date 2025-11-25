@@ -17,10 +17,10 @@
         android:layout_marginTop="8dp" />
 
     <TextView
-        android:id="@+id/lastMessage"
+        android:id="@+id/lastMessageSendTime"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Created At"
+        android:text="Last Message at : "
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

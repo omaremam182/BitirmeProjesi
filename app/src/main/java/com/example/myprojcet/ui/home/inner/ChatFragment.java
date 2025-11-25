@@ -2,6 +2,7 @@ package com.example.myprojcet.ui.home.inner;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +41,7 @@ public class ChatFragment extends Fragment {
     private ImageButton sendButton;
     private ChatAdapter adapter;
     private ChatDatabase my_db;
-    long conversation_id;
+    long conversation_id = -3;
     Cursor cursor;
     boolean isUser;
     private List<Message> messages = new ArrayList<>();
@@ -69,9 +70,7 @@ public class ChatFragment extends Fragment {
 
         if (getArguments() != null) {
             conversation_id = getArguments().getLong("conv_id");
-        }else
-        {
-            conversation_id = my_db.createConversation(u_email);
+            getArguments().clear();
         }
 
         cursor = my_db.getConversationMessages(conversation_id);
@@ -82,14 +81,13 @@ public class ChatFragment extends Fragment {
                 String sender = cursor.getString(cursor.getColumnIndex("sender"));
                 long timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"));
 
-                isUser =  sender.equals("user");
+                isUser = sender.equals("user");
 
                 messages.add(new Message(messageText, isUser,timestamp));
 
             } while (cursor.moveToNext());
         }
 
-        // لا تنسى غلق الـ cursor بعد الانتهاء
         if (cursor != null) {
             cursor.close();
         }
@@ -102,8 +100,15 @@ public class ChatFragment extends Fragment {
             String text = input.getText().toString().trim();
             if (!text.isEmpty()) {
                 addMessage(text, true);
+                Log.d("Conversation ID", "your Conversation ID before sending any message is :  "+conversation_id);
+
+                if(conversation_id == -3)
+                    conversation_id = my_db.createConversation(u_email);
+
                 my_db.insertMessage(conversation_id,"user",text);
                 input.setText("");
+                Log.d("Conversation ID", "your Conversation ID after sending the message is :  "+conversation_id);
+
                 sendMessageToGroq(text,conversation_id);
             }
         });

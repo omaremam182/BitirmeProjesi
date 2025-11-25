@@ -33,6 +33,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Conversation conversation = conversations.get(position);
         holder.convTitle.setText(conversation.getConvTitle());
+        holder.lastMessageSendAt.setText(holder.lastMessageSendAt.getText().toString()+" : "+conversation.getLastMessageTime().toString());
         holder.itemView.setOnClickListener(v -> listener.onConversationClick(conversation.getConvId()));
     }
 
@@ -43,10 +44,12 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView convTitle;
+        TextView lastMessageSendAt;
 
         public ViewHolder(View itemView) {
             super(itemView);
             convTitle = itemView.findViewById(R.id.convTitle);
+            lastMessageSendAt = itemView.findViewById(R.id.lastMessageSendTime);
         }
     }
 

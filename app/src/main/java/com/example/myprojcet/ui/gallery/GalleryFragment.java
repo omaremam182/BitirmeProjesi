@@ -106,7 +106,9 @@ public class GalleryFragment extends Fragment {
         while (cr.moveToNext()) {
             long convId = cr.getLong(cr.getColumnIndex("conv_id"));
             String convTitle = cr.getString(cr.getColumnIndex("conv_title"));
-            conversations.add(new Conversation(convId, convTitle));
+            long lastMessageSendTime = cr.getLong(cr.getColumnIndex("last_message_sended_at"));
+
+            conversations.add(new Conversation(convId, convTitle,lastMessageSendTime));
         }
 
         RecyclerView recyclerView = binding.recyclerViewConversations;

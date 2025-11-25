@@ -116,6 +116,21 @@ public class ChatDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void deleteCoversation(long convId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        int rowsAffected = db.delete("conversations","conv_id = ?", new String[]{String.valueOf(convId)});
+
+
+        if (rowsAffected > 0) {
+            Log.d("DB Delete", "The sonversation deleted successfully");
+        } else {
+            Log.d("DB Delete", "No conversation found with the given ID.");
+        }
+
+        db.close();
+    }
+
     // ---------------------------------------
     // MESSAGES
     // ---------------------------------------
@@ -142,4 +157,5 @@ public class ChatDatabase extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM conversations WHERE user_email = ? ORDER BY last_message_sended_at DESC",
                 new String[]{email});
     }
+
 }
