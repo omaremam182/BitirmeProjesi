@@ -65,6 +65,7 @@ dependencies {
 
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.viewpager2:viewpager2:1.0.0")
+    implementation("com.google.mlkit:language-id:16.0.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

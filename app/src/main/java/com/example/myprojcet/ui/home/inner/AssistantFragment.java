@@ -59,7 +59,7 @@ public class AssistantFragment extends Fragment {
         return root;
     }
 
-    private void initTextToSpeech() {
+    public void initTextToSpeech() {
         tts = new TextToSpeech(getContext(), status -> {
             if (status == TextToSpeech.SUCCESS) {
 
@@ -148,7 +148,7 @@ public class AssistantFragment extends Fragment {
 
 
 
-    private void speakText(String text) {
+    public  void speakText(String text) {
         if (tts != null) {
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
         }

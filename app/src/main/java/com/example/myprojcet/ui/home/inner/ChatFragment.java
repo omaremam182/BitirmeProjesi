@@ -2,6 +2,7 @@ package com.example.myprojcet.ui.home.inner;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,6 +27,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -43,6 +46,7 @@ public class ChatFragment extends Fragment {
     private static final String ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
     private RecyclerView recyclerView;
+    private TextToSpeech tts;
     private EditText input;
     private ImageButton sendButton;
     private ImageButton attachButton;
@@ -51,7 +55,7 @@ public class ChatFragment extends Fragment {
     long conversation_id = -3;
    private Cursor cursor;
     private boolean isUser;
-    RelativeLayout editTextContainer;
+    private RelativeLayout editTextContainer;
     private List<Message> messages = new ArrayList<>();
     private List<JSONObject> conversationHistory = new ArrayList<>();
     private OkHttpClient client = new OkHttpClient();
@@ -101,10 +105,17 @@ public class ChatFragment extends Fragment {
             cursor.close();
         }
 
-        if(messages.isEmpty()){
-        }
 
-        adapter = new ChatAdapter(messages);
+
+        if(messages.isEmpty()){ // bu durumda kategorileri ekle
+        }
+        tts = new TextToSpeech(getContext(), status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                tts.setLanguage(new Locale("tr", "TR"));
+            }
+        });
+
+        adapter = new ChatAdapter(messages, getContext(), tts);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
 
@@ -190,7 +201,7 @@ public class ChatFragment extends Fragment {
                 conversationHistory.add(userMsg);
 
                 JSONObject json = new JSONObject();
-                json.put("model", "openai/gpt-oss-20b");
+                json.put("model", "openai/gpt-oss-120b");
                 JSONArray messagesArray = new JSONArray(conversationHistory);
                 json.put("messages", messagesArray);
 
@@ -234,4 +245,12 @@ public class ChatFragment extends Fragment {
             }
         }).start();
     }
+    private void startNewConversation() {
+        conversation_id = -3;
+        messages.clear();
+        conversationHistory.clear();
+        adapter.notifyDataSetChanged();
+        if (cursor != null) cursor.close();
+    }
+
 }
