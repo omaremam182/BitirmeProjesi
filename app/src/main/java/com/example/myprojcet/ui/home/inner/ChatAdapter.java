@@ -15,7 +15,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.myprojcet.R;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+
+import com.google.mlkit.nl.languageid.LanguageIdentification;
+import com.google.mlkit.nl.languageid.LanguageIdentifier;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHolder> {
 
@@ -85,7 +88,26 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
         if (holder.voiceBtn != null) {
             holder.voiceBtn.setOnClickListener(v -> {
                 if (tts != null) {
-                    tts.speak(message.getText(), TextToSpeech.QUEUE_FLUSH, null, null);
+                    String text = message.getText();
+                    LanguageIdentifier languageIdentifier = LanguageIdentification.getClient();
+
+                    languageIdentifier.identifyLanguage(text)
+                            .addOnSuccessListener(languageCode -> {
+                                // languageCode is "en", "tr", "fr", etc.
+                                if (!languageCode.equals("und")) {
+                                    Locale locale = new Locale(languageCode);
+                                    tts.setLanguage(locale);
+                                    Toast.makeText(context, "Language is :  "+locale.toString(), Toast.LENGTH_SHORT).show();
+                                    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+                                } else {
+                                    tts.setLanguage(Locale.getDefault());
+                                    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                tts.setLanguage(Locale.getDefault());
+                                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+                            });
                 } else {
                     Toast.makeText(context, "TextToSpeech not initialized", Toast.LENGTH_SHORT).show();
                 }
