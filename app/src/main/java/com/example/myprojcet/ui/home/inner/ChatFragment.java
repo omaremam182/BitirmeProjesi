@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -26,6 +29,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import com.example.myprojcet.BuildConfig;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -39,6 +43,7 @@ public class ChatFragment extends Fragment {
     private RecyclerView recyclerView;
     private EditText input;
     private ImageButton sendButton;
+    private ImageButton attachButton;
     private ChatAdapter adapter;
     private ChatDatabase my_db;
     long conversation_id = -3;
@@ -59,6 +64,7 @@ public class ChatFragment extends Fragment {
         recyclerView = view.findViewById(R.id.chatRecyclerView);
         input = view.findViewById(R.id.edittext_home);
         sendButton = view.findViewById(R.id.sendButton);
+        attachButton = view.findViewById(R.id.attach_btn);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String u_email = user.getEmail();
@@ -71,9 +77,9 @@ public class ChatFragment extends Fragment {
         if (getArguments() != null) {
             conversation_id = getArguments().getLong("conv_id");
             getArguments().clear();
+            cursor = my_db.getConversationMessages(conversation_id);
         }
 
-        cursor = my_db.getConversationMessages(conversation_id);
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
@@ -95,7 +101,25 @@ public class ChatFragment extends Fragment {
         adapter = new ChatAdapter(messages);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
+        attachButton.setOnClickListener(v3->{
+            Toast.makeText(getContext(),"It is working",Toast.LENGTH_LONG);
+            BottomSheetDialog bottomSheet = new BottomSheetDialog(getContext());
+            View sheetView = getLayoutInflater().inflate(R.layout.attach_menu, null);
 
+            bottomSheet.setContentView(sheetView);
+            bottomSheet.show();
+
+            LinearLayout itemGallery = sheetView.findViewById(R.id.item_gallery);
+            LinearLayout itemCamera = sheetView.findViewById(R.id.item_camera);
+
+            itemGallery.setOnClickListener(mview -> {
+                bottomSheet.dismiss();
+            });
+
+            itemCamera.setOnClickListener(view2 -> {
+                bottomSheet.dismiss();
+            });
+        });
         sendButton.setOnClickListener(v -> {
             String text = input.getText().toString().trim();
             if (!text.isEmpty()) {
@@ -156,6 +180,7 @@ public class ChatFragment extends Fragment {
                         .getJSONObject(0)
                         .getJSONObject("message")
                         .getString("content");
+
 
                 JSONObject botMsg = new JSONObject();
                 botMsg.put("role", "assistant");

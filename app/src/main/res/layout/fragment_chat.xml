@@ -10,31 +10,77 @@
         android:layout_above="@+id/messageContainer"
         android:padding="8dp"
         android:clipToPadding="false" />
-
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/messageContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentBottom="true"
-        android:padding="10dp">
+        android:padding="10dp"
+        android:layout_alignParentBottom="true">
 
-        <EditText
-            android:id="@+id/edittext_home"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:hint="write your message..."
-            android:inputType="textMultiLine|textNoSuggestions"
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="50dp"
             android:background="@drawable/edittext_gray"
-            android:padding="8dp" />
+            android:paddingStart="10dp"
+            android:paddingEnd="20dp"
+            android:layout_centerVertical="true"
+            android:gravity="center_vertical">
 
-        <ImageButton
-            android:id="@+id/sendButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@mipmap/ic_btn_send_tes"
-            android:contentDescription="Send" />
-    </LinearLayout>
+            <ImageButton
+                android:id="@+id/attach_btn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentLeft="true"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:src="@drawable/attach_32"
+                android:padding="3dp"/>
+
+<!--            <EditText-->
+<!--                android:id="@+id/edittext_home"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="60dp"-->
+<!--                android:minHeight="50dp"-->
+<!--                android:maxHeight="90dp"-->
+<!--                android:background="@android:color/transparent"-->
+<!--                android:hint="write your message..."-->
+<!--                android:inputType="textMultiLine|textNoSuggestions"-->
+<!--                android:maxLines="3"-->
+<!--                android:paddingRight="45dp"-->
+<!--                android:paddingLeft="50dp"-->
+<!--                android:gravity="center_vertical"/>-->
+            <EditText
+                android:id="@+id/edittext_home"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:minHeight="50dp"
+                android:maxHeight="90dp"
+                android:background="@android:color/transparent"
+                android:hint="write your message..."
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:maxLines="3"
+                android:paddingRight="7dp"
+                android:paddingLeft="15dp"
+                android:layout_toRightOf="@id/attach_btn"
+                android:layout_toLeftOf="@id/sendButton"
+                android:gravity="center_vertical"/>
+
+            <ImageButton
+                android:id="@+id/sendButton"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:src="@drawable/chatbot_send_btn"
+                android:padding="3dp"/>
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
 </RelativeLayout>
 
