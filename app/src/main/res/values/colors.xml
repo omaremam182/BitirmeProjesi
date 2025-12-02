@@ -11,5 +11,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="listen_btn_bg">#FFFFFFFF</color>
     <color name="chatbot_edittext_bg">#F0F0F0</color>
+    <color name="attach_popup_bg">#CBCBCB</color>
 
 </resources>

@@ -3,12 +3,15 @@ package com.example.myprojcet.ui.home.inner;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -29,7 +32,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import com.example.myprojcet.BuildConfig;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -47,8 +49,9 @@ public class ChatFragment extends Fragment {
     private ChatAdapter adapter;
     private ChatDatabase my_db;
     long conversation_id = -3;
-    Cursor cursor;
-    boolean isUser;
+   private Cursor cursor;
+    private boolean isUser;
+    RelativeLayout editTextContainer;
     private List<Message> messages = new ArrayList<>();
     private List<JSONObject> conversationHistory = new ArrayList<>();
     private OkHttpClient client = new OkHttpClient();
@@ -65,6 +68,7 @@ public class ChatFragment extends Fragment {
         input = view.findViewById(R.id.edittext_home);
         sendButton = view.findViewById(R.id.sendButton);
         attachButton = view.findViewById(R.id.attach_btn);
+        editTextContainer = view.findViewById(R.id.chat_edittext_container);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String u_email = user.getEmail();
@@ -80,46 +84,77 @@ public class ChatFragment extends Fragment {
             cursor = my_db.getConversationMessages(conversation_id);
         }
 
+        if (cursor != null) {
 
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                String messageText = cursor.getString(cursor.getColumnIndex("message"));
-                String sender = cursor.getString(cursor.getColumnIndex("sender"));
-                long timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"));
+            if (cursor.moveToFirst()) {
+                do {
+                    String messageText = cursor.getString(cursor.getColumnIndex("message"));
+                    String sender = cursor.getString(cursor.getColumnIndex("sender"));
+                    long timestamp = cursor.getLong(cursor.getColumnIndex("timestamp"));
 
-                isUser = sender.equals("user");
+                    isUser = sender.equals("user");
 
-                messages.add(new Message(messageText, isUser,timestamp));
+                    messages.add(new Message(messageText, isUser,timestamp));
 
-            } while (cursor.moveToNext());
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
         }
 
-        if (cursor != null) {
-            cursor.close();
+        if(messages.isEmpty()){
         }
 
         adapter = new ChatAdapter(messages);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
-        attachButton.setOnClickListener(v3->{
-            Toast.makeText(getContext(),"It is working",Toast.LENGTH_LONG);
-            BottomSheetDialog bottomSheet = new BottomSheetDialog(getContext());
-            View sheetView = getLayoutInflater().inflate(R.layout.attach_menu, null);
 
-            bottomSheet.setContentView(sheetView);
-            bottomSheet.show();
 
-            LinearLayout itemGallery = sheetView.findViewById(R.id.item_gallery);
-            LinearLayout itemCamera = sheetView.findViewById(R.id.item_camera);
+        attachButton.setOnClickListener(v -> {
 
-            itemGallery.setOnClickListener(mview -> {
-                bottomSheet.dismiss();
+            View popupView = getLayoutInflater().inflate(R.layout.attach_popup, null);
+
+            int width = editTextContainer.getWidth();
+
+            int heightInDp = 180;
+            int heightInPx = (int) (heightInDp * getResources().getDisplayMetrics().density);
+
+            popupView.measure(
+                    View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(heightInPx, View.MeasureSpec.EXACTLY)
+            );
+
+            PopupWindow popupWindow = new PopupWindow(
+                    popupView,
+                    width,
+                    heightInPx,
+                    true
+            );
+
+            popupWindow.setElevation(12);
+
+            int[] location = new int[2];
+            editTextContainer.getLocationOnScreen(location);
+
+            int popupY = location[1] - heightInPx - 10;
+
+            popupWindow.showAtLocation(editTextContainer, Gravity.NO_GRAVITY,
+                    location[0], popupY);
+
+            LinearLayout open_ai_model = popupView.findViewById(R.id.open_ai);
+            LinearLayout meta_model  = popupView.findViewById(R.id.meta);
+
+            open_ai_model.setOnClickListener(e -> {
+                Toast.makeText(getContext(), "Open AI", Toast.LENGTH_SHORT).show();
+                popupWindow.dismiss();
             });
 
-            itemCamera.setOnClickListener(view2 -> {
-                bottomSheet.dismiss();
+            meta_model.setOnClickListener(e -> {
+                Toast.makeText(getContext(), "META", Toast.LENGTH_SHORT).show();
+                popupWindow.dismiss();
             });
         });
+
+
         sendButton.setOnClickListener(v -> {
             String text = input.getText().toString().trim();
             if (!text.isEmpty()) {
