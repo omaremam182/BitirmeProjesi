@@ -42,5 +42,24 @@ public class DeviceAlarm {
             Toast.makeText(context, "Failed to set alarm: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+    public void setDeviceTimer(int seconds, String message) {
+        try {
+            Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER);
+            intent.putExtra(AlarmClock.EXTRA_LENGTH, seconds);
+            intent.putExtra(AlarmClock.EXTRA_MESSAGE, message);
+            intent.putExtra(AlarmClock.EXTRA_SKIP_UI, true); // safest option = false
+
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+                Toast.makeText(context, "Timer set for " + seconds + " seconds", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "No app available to set a timer!", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Failed to set timer: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
 
 }

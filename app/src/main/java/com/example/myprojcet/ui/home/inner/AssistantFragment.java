@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.provider.AlarmClock;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.view.LayoutInflater;
@@ -20,7 +21,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.myprojcet.R;
+import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
+import com.example.myprojcet.deviceControl.SmsSender;
 import com.example.myprojcet.deviceControl.ileriZamanliIslem;
 import com.example.myprojcet.deviceControl.BluetoothControl;
 import com.example.myprojcet.deviceControl.WifiControl;
@@ -33,10 +36,16 @@ public class AssistantFragment extends Fragment {
 
     private static final int REQUEST_CODE_SPEECH_INPUT = 100;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 101;
+    private static final int SMS_PERMISSION_REQUEST = 102;
+    private static final int READ_CONTACTS_REQUEST = 103;
+
+
+
 
     private TextToSpeech tts;
     private ImageButton listenButton;
-
+    private SmsSender smsSender;
+    private ContactResolver contactResolver;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -49,6 +58,8 @@ public class AssistantFragment extends Fragment {
 
         initTextToSpeech();
 
+        smsSender = new SmsSender(requireContext());
+        contactResolver = new ContactResolver(requireContext());
         listenButton.setOnClickListener(v -> {
             if (checkAudioPermission()) {
                 startSpeechToText();
@@ -117,16 +128,49 @@ public class AssistantFragment extends Fragment {
     private void handleCommand(String recognizedText) {
         recognizedText = recognizedText.toLowerCase(Locale.ROOT);
 
-        if (recognizedText.contains("aç") || recognizedText.contains("başlat")) {
-            openAppByName(recognizedText);
-        } else if (recognizedText.contains("alarm")) {
+         if (recognizedText.contains("alarm")) {
+            if(recognizedText.contains("iptal") || recognizedText.contains("sil") || recognizedText.contains("kapat")){
+                Intent intent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
+                getContext().startActivity(intent);
+                return;
+            }
             DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
-            deviceAlarm.setDeviceAlarm(10,20,"Hello from My project");
-        } else {
+            deviceAlarm.setDeviceAlarm(10,20,"This alarm has been created by myproject");
+
+
+        } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
+            if(recognizedText.contains("kapat") || recognizedText.contains("durdur")
+                    || recognizedText.contains("iptal") || recognizedText.contains("sil")) {
+                Intent intent = new Intent(AlarmClock.ACTION_SHOW_TIMERS);
+                getContext().startActivity(intent);
+                return;
+            }
+            DeviceAlarm timer = new DeviceAlarm(getContext());
+            timer.setDeviceTimer(90, "My Project's Timer");
+
+        } else if (recognizedText.contains("mesaj")||recognizedText.contains("kişi")||recognizedText.contains("sms")) {
+             String contact = getTheContact((recognizedText.split(" ")));
+             if(contact != null)
+                sendSmsToContact(contact,"This is a test");
+             else
+                 Toast.makeText(requireContext(),"Kişi bulunamadı",Toast.LENGTH_LONG).show();
+
+         } else if (recognizedText.contains("aç") || recognizedText.contains("başlat")) {
+            openAppByName(recognizedText);
+        }
+         else {
             speakText("Üzgünüm, bu komutu anlayamadım.");
         }
     }
 
+    private String getTheContact( String[] words) {
+        for(int i = 0;i<words.length;i++){
+            if(words[i].contains("kişi")){
+                return words[--i];
+            }
+        }
+        return null;
+    }
 
 
     private void openAppByName(String spokenText) {
@@ -134,29 +178,30 @@ public class AssistantFragment extends Fragment {
         List<ApplicationInfo> apps = pm.getInstalledApplications(
                 PackageManager.GET_META_DATA | PackageManager.MATCH_ALL);
 
-        String lowerText = spokenText.toLowerCase(Locale.ROOT);
 
-        if(lowerText.contains("wi-fi")) {
+
+        if(spokenText.contains("wi-fi")) {
             WifiControl wifiControl = new WifiControl(getContext());
             wifiControl.toggleWifi(true);
+            return;
+
             // Turn Wi-Fi OFF
 //            wifiControl.toggleWifi(false);
-        } else if (lowerText.contains("bluetooth")) {
+        } else if (spokenText.contains("bluetooth")) {
             BluetoothControl bC = new BluetoothControl(getContext());
             bC.toggleBluetooth(true);
-        } else if (lowerText.contains("alarm")) {
-            DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
-            deviceAlarm.setDeviceAlarm(10,20,"Hello from My project");
-            
-        } else if (lowerText.contains("ileri dogru islem")) {
+            return;
+
+        } else if (spokenText.contains("ileri dogru islem")) {
             ileriZamanliIslem alarmReceiver = new ileriZamanliIslem(getContext());
             alarmReceiver.setExactAlarm(4,49);
+            return;
 
         }
         for (ApplicationInfo appInfo : apps) {
             String appName = pm.getApplicationLabel(appInfo).toString().toLowerCase(Locale.ROOT);
 
-            if (lowerText.contains(appName)) {
+            if (spokenText.contains(appName)) {
                 Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
                 if (launchIntent != null) {
                     startActivity(launchIntent);
@@ -170,9 +215,36 @@ public class AssistantFragment extends Fragment {
     }
 
 
+    private void sendSmsDirect(String number, String message) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            requestSmsPermission();
+            return;
+        }
+
+        smsSender.sendSms(number, message);
+    }
+    private void sendSmsToContact(String contactName, String message) {
+        if (ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+
+            requestReadContactsPermission();
+            return;
+        }
+        String phone = contactResolver.getPhoneNumber(contactName);
+
+        if (phone == null) {
+            Toast.makeText(getContext(), "Contact not found!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        sendSmsDirect(phone, message);
+    }
 
 
-    public  void speakText(String text) {
+
+    public void speakText(String text) {
         if (tts != null) {
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
         }
@@ -188,6 +260,21 @@ public class AssistantFragment extends Fragment {
                 Toast.makeText(getContext(), "Audio permission denied", Toast.LENGTH_SHORT).show();
             }
         }
+        else if (requestCode == SMS_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "SMS permission granted!", Toast.LENGTH_SHORT).show();
+
+            } else {
+                Toast.makeText(getContext(), "SMS permission denied!", Toast.LENGTH_SHORT).show();
+            }
+        }
+       else if (requestCode == READ_CONTACTS_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "Contacts permission granted!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Contacts permission denied!", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -198,4 +285,17 @@ public class AssistantFragment extends Fragment {
         }
         super.onDestroy();
     }
+    private void requestSmsPermission() {
+        requestPermissions(
+                new String[]{Manifest.permission.SEND_SMS},
+                SMS_PERMISSION_REQUEST
+        );
+    }
+    private void requestReadContactsPermission() {
+        requestPermissions(
+                new String[]{Manifest.permission.READ_CONTACTS},
+                READ_CONTACTS_REQUEST
+        );
+    }
+
 }
