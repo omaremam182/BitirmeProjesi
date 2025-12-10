@@ -1,5 +1,7 @@
 package com.example.myprojcet.ui.home.inner;
 
+import static java.security.AccessController.getContext;
+
 import android.database.Cursor;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -26,8 +28,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -38,6 +42,9 @@ import com.example.myprojcet.BuildConfig;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListAdapter;
+import android.widget.SimpleExpandableListAdapter;
 
 public class ChatFragment extends Fragment {
 
@@ -60,6 +67,9 @@ public class ChatFragment extends Fragment {
     private List<JSONObject> conversationHistory = new ArrayList<>();
     private OkHttpClient client = new OkHttpClient();
 
+    ExpandableListView expandableListView ;
+    List<Map<String, String>> groupData;
+    List<List<Map<String, String>>> childData;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -104,11 +114,102 @@ public class ChatFragment extends Fragment {
             }
             cursor.close();
         }
+        expandableListView = view.findViewById(R.id.expandableListView);
+        groupData = new ArrayList<>();
+        childData = new ArrayList<>();
 
 
 
-        if(messages.isEmpty()){ // bu durumda kategorileri ekle
+
+        if(messages.isEmpty()){
+            Map<String, String> group1 = new HashMap<>();
+            group1.put("Group", "Spor");
+            groupData.add(group1);
+
+            List<Map<String, String>> group1Children = new ArrayList<>();
+
+            Map<String, String> child1 = new HashMap<>();
+            child1.put("Item", "Futbol");
+            group1Children.add(child1);
+
+            Map<String, String> child2 = new HashMap<>();
+            child2.put("Item", "Dünya kupası");
+            group1Children.add(child2);
+
+            childData.add(group1Children);
+
+            Map<String, String> group2 = new HashMap<>();
+            group2.put("Group", "Teknoloji");
+            groupData.add(group2);
+
+            List<Map<String, String>> group2Children = new ArrayList<>();
+
+            Map<String, String> childA = new HashMap<>();
+            childA.put("Item", "Yapay Zeka");
+            group2Children.add(childA);
+
+            Map<String, String> childB = new HashMap<>();
+            childB.put("Item", "Yazılım");
+            group2Children.add(childB);
+
+            Map<String, String> group3 = new HashMap<>();
+            group3.put("Group", "Tıp");
+            groupData.add(group3);
+            childData.add(group2Children);
+
+
+            List<Map<String, String>> group3Children = new ArrayList<>();
+
+            Map<String, String> child3A = new HashMap<>();
+            child3A.put("Item", "Kardiyoloji");
+            group3Children.add(child3A);
+
+            Map<String, String> child3B = new HashMap<>();
+            child3B.put("Item", "Nöroloji");
+            group3Children.add(child3B);
+            childData.add(group3Children);
+
+            ExpandableListAdapter expandableListAdapter =
+                    new SimpleExpandableListAdapter(
+                            getContext(),
+                            groupData,
+                            android.R.layout.simple_expandable_list_item_1,
+                            new String[]{"Group"},
+                            new int[]{android.R.id.text1},
+                            childData,
+                            android.R.layout.simple_list_item_1,
+                            new String[]{"Item"},
+                            new int[]{android.R.id.text1}
+                    );
+
+            expandableListView.setAdapter(expandableListAdapter);
+
         }
+
+
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v,
+                                        int groupPosition, int childPosition, long id) {
+
+                Map<String, String> selectedChild = childData.get(groupPosition).get(childPosition);
+                String itemName = selectedChild.get("Item");
+
+                //Toast.makeText(getContext(), "You clicked: " + itemName, Toast.LENGTH_SHORT).show();
+
+                if(conversation_id == -3)
+                    conversation_id = my_db.createConversation(u_email);
+
+                String text =  itemName+ " alanindaki son gelişmeler nelerdir";
+                addMessage(text, true);
+
+                my_db.insertMessage(conversation_id,"user",text);
+                sendMessageToGroq(text,conversation_id);
+
+                return true;
+            }
+        });
+
         tts = new TextToSpeech(getContext(), status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(new Locale("tr", "TR"));
@@ -187,6 +288,8 @@ public class ChatFragment extends Fragment {
     }
 
     private void addMessage(String text, boolean isUser) {
+        expandableListView.setVisibility(View.GONE);
+
         messages.add(new Message(text, isUser,System.currentTimeMillis()));
         adapter.notifyItemInserted(messages.size() - 1);
         recyclerView.scrollToPosition(messages.size() - 1);
@@ -201,7 +304,7 @@ public class ChatFragment extends Fragment {
                 conversationHistory.add(userMsg);
 
                 JSONObject json = new JSONObject();
-                json.put("model", "openai/gpt-oss-120b");
+                json.put("model", "openai/gpt-oss-20b");
                 JSONArray messagesArray = new JSONArray(conversationHistory);
                 json.put("messages", messagesArray);
 

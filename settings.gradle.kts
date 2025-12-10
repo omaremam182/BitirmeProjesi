@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MyProjcet"
+rootProject.name = "Bitirme Projesi"
 include(":app")
  

@@ -10,6 +10,7 @@
     <color name="hafif_gri">#405A5A5A</color>
     <color name="white">#FFFFFFFF</color>
     <color name="listen_btn_bg">#FFFFFFFF</color>
+    <color name="arkaplanTersi">#000</color>
     <color name="chatbot_edittext_bg">#F0F0F0</color>
     <color name="attach_popup_bg">#CBCBCB</color>
 

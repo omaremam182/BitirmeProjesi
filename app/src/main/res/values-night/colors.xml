@@ -3,5 +3,6 @@
     <color name="listen_btn_bg">#3D111111</color>
     <color name="chatbot_edittext_bg">#666666</color>
     <color name="attach_popup_bg">#464646</color>
+    <color name="arkaplanTersi">#FFFFFFFF</color>
 
 </resources>

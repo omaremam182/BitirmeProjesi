@@ -10,12 +10,27 @@
         android:layout_above="@+id/messageContainer"
         android:padding="8dp"
         android:clipToPadding="false" />
+
+    <android.widget.ExpandableListView
+        android:id="@+id/expandableListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_above="@+id/messageContainer"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp"
+        android:groupIndicator="@drawable/custom_indicator"
+        android:padding="8dp" />
+
     <RelativeLayout
         android:id="@+id/messageContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="10dp"
         android:layout_alignParentBottom="true">
+
+
+
 
 
         <RelativeLayout

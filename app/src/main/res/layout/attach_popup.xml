@@ -27,7 +27,7 @@
             <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@drawable/chatgpt_30"/>
+                android:src="@drawable/openai_btn_40"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -48,7 +48,7 @@
             <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@drawable/meta_30"/>
+                android:src="@drawable/meta_btn_40"/>
 
             <TextView
                 android:layout_width="wrap_content"
