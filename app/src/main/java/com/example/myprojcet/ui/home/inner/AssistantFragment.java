@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
@@ -16,12 +15,15 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.myprojcet.R;
+import com.example.myprojcet.deviceControl.DeviceAlarm;
+import com.example.myprojcet.deviceControl.ileriZamanliIslem;
+import com.example.myprojcet.deviceControl.BluetoothControl;
+import com.example.myprojcet.deviceControl.WifiControl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,10 +119,15 @@ public class AssistantFragment extends Fragment {
 
         if (recognizedText.contains("aç") || recognizedText.contains("başlat")) {
             openAppByName(recognizedText);
+        } else if (recognizedText.contains("alarm")) {
+            DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
+            deviceAlarm.setDeviceAlarm(10,20,"Hello from My project");
         } else {
             speakText("Üzgünüm, bu komutu anlayamadım.");
         }
     }
+
+
 
     private void openAppByName(String spokenText) {
         PackageManager pm = requireContext().getPackageManager();
@@ -129,6 +136,23 @@ public class AssistantFragment extends Fragment {
 
         String lowerText = spokenText.toLowerCase(Locale.ROOT);
 
+        if(lowerText.contains("wi-fi")) {
+            WifiControl wifiControl = new WifiControl(getContext());
+            wifiControl.toggleWifi(true);
+            // Turn Wi-Fi OFF
+//            wifiControl.toggleWifi(false);
+        } else if (lowerText.contains("bluetooth")) {
+            BluetoothControl bC = new BluetoothControl(getContext());
+            bC.toggleBluetooth(true);
+        } else if (lowerText.contains("alarm")) {
+            DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
+            deviceAlarm.setDeviceAlarm(10,20,"Hello from My project");
+            
+        } else if (lowerText.contains("ileri dogru islem")) {
+            ileriZamanliIslem alarmReceiver = new ileriZamanliIslem(getContext());
+            alarmReceiver.setExactAlarm(4,49);
+
+        }
         for (ApplicationInfo appInfo : apps) {
             String appName = pm.getApplicationLabel(appInfo).toString().toLowerCase(Locale.ROOT);
 
