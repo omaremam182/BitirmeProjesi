@@ -3,24 +3,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/chatRecyclerView"
+    <FrameLayout
+        android:id="@+id/contentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/messageContainer"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:layout_above="@+id/messageContainer">
 
-    <android.widget.ExpandableListView
-        android:id="@+id/expandableListView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:layout_above="@+id/messageContainer"
-        android:divider="@android:color/darker_gray"
-        android:dividerHeight="0.5dp"
-        android:groupIndicator="@drawable/custom_indicator"
-        android:padding="8dp" />
+        <!-- RecyclerView for chat messages -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chatRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:clipToPadding="false" />
+
+        <!-- ExpandableListView -->
+        <android.widget.ExpandableListView
+            android:id="@+id/expandableListView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="0.5dp"
+            android:groupIndicator="@drawable/custom_indicator"
+            android:padding="8dp"
+            android:visibility="gone" /> <!-- تبدأ مخفية -->
+
+    </FrameLayout>
+
 
     <RelativeLayout
         android:id="@+id/messageContainer"
