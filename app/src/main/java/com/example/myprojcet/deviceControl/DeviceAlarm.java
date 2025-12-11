@@ -28,9 +28,8 @@ public class DeviceAlarm {
             intent.putExtra(AlarmClock.EXTRA_MESSAGE, message);
 
             // Show Clock app UI for user confirmation (safe on MIUI / Samsung / modern Android)
-            intent.putExtra(AlarmClock.EXTRA_SKIP_UI, false);
+            intent.putExtra(AlarmClock.EXTRA_SKIP_UI, true);
 
-            // Verify that an app exists to handle this intent
             if (intent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(intent);
                 Toast.makeText(context, "Setting alarm for " + hour + ":" + (minute < 10 ? "0" + minute : minute), Toast.LENGTH_SHORT).show();

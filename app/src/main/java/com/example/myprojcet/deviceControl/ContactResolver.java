@@ -30,7 +30,7 @@ public class ContactResolver {
 
         String phoneNumber  =  this.getPhoneNumber(contactName);
         if(phoneNumber == null || phoneNumber.trim().isEmpty()){
-//            Toast.makeText(this.context, "Contact not found!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this.context, "Contact not found!", Toast.LENGTH_SHORT).show();
             return null;
         }
         return phoneNumber;

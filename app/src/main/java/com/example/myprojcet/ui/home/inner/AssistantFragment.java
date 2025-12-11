@@ -25,7 +25,7 @@ import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
 import com.example.myprojcet.deviceControl.PhoneCallHandler;
 import com.example.myprojcet.deviceControl.SmsSender;
-import com.example.myprojcet.deviceControl.WhatsAppMessageHandler;
+import com.example.myprojcet.deviceControl.WhatsAppOperationsHandler;
 import com.example.myprojcet.deviceControl.ileriZamanliIslem;
 import com.example.myprojcet.deviceControl.BluetoothControl;
 import com.example.myprojcet.deviceControl.WifiControl;
@@ -137,7 +137,7 @@ public class AssistantFragment extends Fragment {
                 return;
             }
             DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
-            deviceAlarm.setDeviceAlarm(10,20,"This alarm has been created by myproject");
+            deviceAlarm.setDeviceAlarm(6,20,"This alarm has been created by myproject");
 
 
         } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
@@ -163,9 +163,16 @@ public class AssistantFragment extends Fragment {
              }
          } else if (recognizedText.contains("ara") && recognizedText.contains("kişi")) {
              String contact = getTheContact((recognizedText.split(" ")));
-             if(contact != null)
+
+             if(contact != null) {
+//                 if(recognizedText.contains("whatsapp")){
+//                     boolean isVideoCall= recognizedText.contains("video");
+//                     callByWhatsapp(contact,isVideoCall);
+//                      return;
+
                  makePhoneCall(contact);
-             else
+
+             }else
                  Toast.makeText(requireContext(),"Kişi bulunamadı",Toast.LENGTH_LONG).show();
 
 
@@ -181,8 +188,16 @@ public class AssistantFragment extends Fragment {
 
         String phone = contactResolver.findNumberByContact(contact);
         if (!(phone == null || phone.isEmpty())) {
-            WhatsAppMessageHandler whatsAppMessageHandler = new WhatsAppMessageHandler(requireContext());
-            whatsAppMessageHandler.sendWhatsAppMessage(contact, message);
+            WhatsAppOperationsHandler whatsAppOperationsHandler = new WhatsAppOperationsHandler(requireContext());
+            whatsAppOperationsHandler.sendWhatsAppMessage(phone, message);
+        }
+    }
+    private void callByWhatsapp(String contact, boolean isVideoCall) {
+
+        String phone = contactResolver.findNumberByContact(contact);
+        if (!(phone == null || phone.isEmpty())) {
+            WhatsAppOperationsHandler whatsAppOperationsHandler = new WhatsAppOperationsHandler(requireContext());
+            whatsAppOperationsHandler.makeWhatsAppCall(phone, isVideoCall);
         }
     }
 
