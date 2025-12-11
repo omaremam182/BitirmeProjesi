@@ -23,7 +23,9 @@ import androidx.fragment.app.Fragment;
 import com.example.myprojcet.R;
 import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
+import com.example.myprojcet.deviceControl.PhoneCallHandler;
 import com.example.myprojcet.deviceControl.SmsSender;
+import com.example.myprojcet.deviceControl.WhatsAppMessageHandler;
 import com.example.myprojcet.deviceControl.ileriZamanliIslem;
 import com.example.myprojcet.deviceControl.BluetoothControl;
 import com.example.myprojcet.deviceControl.WifiControl;
@@ -38,7 +40,7 @@ public class AssistantFragment extends Fragment {
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 101;
     private static final int SMS_PERMISSION_REQUEST = 102;
     private static final int READ_CONTACTS_REQUEST = 103;
-
+    private static final int PERMISSION_REQUEST_CALL = 105;
 
 
 
@@ -59,7 +61,7 @@ public class AssistantFragment extends Fragment {
         initTextToSpeech();
 
         smsSender = new SmsSender(requireContext());
-        contactResolver = new ContactResolver(requireContext());
+        contactResolver = new ContactResolver(requireContext(),requireActivity());
         listenButton.setOnClickListener(v -> {
             if (checkAudioPermission()) {
                 startSpeechToText();
@@ -148,18 +150,39 @@ public class AssistantFragment extends Fragment {
             DeviceAlarm timer = new DeviceAlarm(getContext());
             timer.setDeviceTimer(90, "My Project's Timer");
 
-        } else if (recognizedText.contains("mesaj")||recognizedText.contains("kişi")||recognizedText.contains("sms")) {
+        } else if ((recognizedText.contains("mesaj")||recognizedText.contains("sms")) && recognizedText.contains("kişi")) {
+             String contact = getTheContact((recognizedText.split(" ")));
+             if(recognizedText.contains("whatsapp")){
+                 sendWhatsappMessage(contact,"This is a test , please do not reply");
+             }
+             else {
+                 if (contact != null)
+                     sendSmsToContact(contact, "This is a test");
+                 else
+                     Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+             }
+         } else if (recognizedText.contains("ara") && recognizedText.contains("kişi")) {
              String contact = getTheContact((recognizedText.split(" ")));
              if(contact != null)
-                sendSmsToContact(contact,"This is a test");
+                 makePhoneCall(contact);
              else
                  Toast.makeText(requireContext(),"Kişi bulunamadı",Toast.LENGTH_LONG).show();
+
 
          } else if (recognizedText.contains("aç") || recognizedText.contains("başlat")) {
             openAppByName(recognizedText);
         }
          else {
             speakText("Üzgünüm, bu komutu anlayamadım.");
+        }
+    }
+
+    private void sendWhatsappMessage(String contact, String message) {
+
+        String phone = contactResolver.findNumberByContact(contact);
+        if (!(phone == null || phone.isEmpty())) {
+            WhatsAppMessageHandler whatsAppMessageHandler = new WhatsAppMessageHandler(requireContext());
+            whatsAppMessageHandler.sendWhatsAppMessage(contact, message);
         }
     }
 
@@ -226,22 +249,29 @@ public class AssistantFragment extends Fragment {
         smsSender.sendSms(number, message);
     }
     private void sendSmsToContact(String contactName, String message) {
-        if (ContextCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
 
-            requestReadContactsPermission();
-            return;
-        }
-        String phone = contactResolver.getPhoneNumber(contactName);
+        String phone = contactResolver.findNumberByContact(contactName);
 
         if (phone == null) {
-            Toast.makeText(getContext(), "Contact not found!", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(getContext(), "Contact not found!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         sendSmsDirect(phone, message);
     }
 
+
+    private void makePhoneCall(String contact) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CALL_PHONE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted, request it.
+            requestCallPermission();
+            return;
+        }
+            // Permission is already granted, proceed with the call.
+        PhoneCallHandler phoneCallHandler = new PhoneCallHandler(requireContext());
+        phoneCallHandler.callPhoneNumber(contactResolver.findNumberByContact(contact));
+    }
 
 
     public void speakText(String text) {
@@ -274,7 +304,15 @@ public class AssistantFragment extends Fragment {
             } else {
                 Toast.makeText(getContext(), "Contacts permission denied!", Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == PERMISSION_REQUEST_CALL) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                // Permission denied. Inform the user or disable the feature.
+                Toast.makeText(requireContext(), "Call permission denied. Cannot make calls.", Toast.LENGTH_SHORT).show();
+            }
         }
+
     }
 
     @Override
@@ -291,11 +329,17 @@ public class AssistantFragment extends Fragment {
                 SMS_PERMISSION_REQUEST
         );
     }
-    private void requestReadContactsPermission() {
-        requestPermissions(
-                new String[]{Manifest.permission.READ_CONTACTS},
-                READ_CONTACTS_REQUEST
-        );
+//    private void requestReadContactsPermission() {
+//        requestPermissions(
+//                new String[]{Manifest.permission.READ_CONTACTS},
+//                READ_CONTACTS_REQUEST
+//        );
+//    }
+
+    private void requestCallPermission() {
+        ActivityCompat.requestPermissions(requireActivity(),
+                new String[]{Manifest.permission.CALL_PHONE},
+                PERMISSION_REQUEST_CALL);
     }
 
 }
