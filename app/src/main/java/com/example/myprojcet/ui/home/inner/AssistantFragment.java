@@ -24,7 +24,6 @@ import com.example.myprojcet.R;
 import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
 import com.example.myprojcet.deviceControl.FlashHandler;
-import com.example.myprojcet.deviceControl.GoogleHandler;
 import com.example.myprojcet.deviceControl.MapsHandler;
 import com.example.myprojcet.deviceControl.PhoneCallHandler;
 import com.example.myprojcet.deviceControl.SmsSender;
@@ -142,11 +141,6 @@ public class AssistantFragment extends Fragment {
             DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
             deviceAlarm.setDeviceAlarm(6,20,"This alarm has been created by myproject");
 
-
-        } else if (recognizedText.contains("google") || recognizedText.contains("tarayıcı")) {
-//             GoogleHandler googleHandler = new GoogleHandler(requireContext());
-//             googleHandler.googleBrowserSearch(getTheQuery(recognizedText.split(" ")));
-             return;
 
          } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
             if(recognizedText.contains("kapat") || recognizedText.contains("durdur")
