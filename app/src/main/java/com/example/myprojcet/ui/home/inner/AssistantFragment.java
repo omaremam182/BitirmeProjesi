@@ -23,6 +23,9 @@ import androidx.fragment.app.Fragment;
 import com.example.myprojcet.R;
 import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
+import com.example.myprojcet.deviceControl.FlashHandler;
+import com.example.myprojcet.deviceControl.GoogleHandler;
+import com.example.myprojcet.deviceControl.MapsHandler;
 import com.example.myprojcet.deviceControl.PhoneCallHandler;
 import com.example.myprojcet.deviceControl.SmsSender;
 import com.example.myprojcet.deviceControl.WhatsAppOperationsHandler;
@@ -140,7 +143,12 @@ public class AssistantFragment extends Fragment {
             deviceAlarm.setDeviceAlarm(6,20,"This alarm has been created by myproject");
 
 
-        } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
+        } else if (recognizedText.contains("google") || recognizedText.contains("tarayıcı")) {
+//             GoogleHandler googleHandler = new GoogleHandler(requireContext());
+//             googleHandler.googleBrowserSearch(getTheQuery(recognizedText.split(" ")));
+             return;
+
+         } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
             if(recognizedText.contains("kapat") || recognizedText.contains("durdur")
                     || recognizedText.contains("iptal") || recognizedText.contains("sil")) {
                 Intent intent = new Intent(AlarmClock.ACTION_SHOW_TIMERS);
@@ -150,7 +158,22 @@ public class AssistantFragment extends Fragment {
             DeviceAlarm timer = new DeviceAlarm(getContext());
             timer.setDeviceTimer(90, "My Project's Timer");
 
-        } else if ((recognizedText.contains("mesaj")||recognizedText.contains("sms")) && recognizedText.contains("kişi")) {
+        } else if (recognizedText.contains("konum") || recognizedText.contains("lokasyon") ) {
+             MapsHandler mapsHandler = new MapsHandler(requireContext());
+             String dest = getTheDestinaton(recognizedText.split(" "));
+             if(dest != null){
+                 mapsHandler.search(dest);
+             }
+
+         } else if (recognizedText.contains("flaş")||recognizedText.contains("fener")||recognizedText.contains("flash")) {
+             FlashHandler flashHandler = new FlashHandler(requireContext());
+             if (recognizedText.contains("yak")||recognizedText.contains("aç")|| recognizedText.contains("çalıştır")){
+                 flashHandler.turnFlashlightOn();
+             }else if(recognizedText.contains("söndür")||recognizedText.contains("kapat")){
+                 flashHandler.turnFlashlightOff();
+             }
+
+         } else if ((recognizedText.contains("mesaj")||recognizedText.contains("sms")) && recognizedText.contains("kişi")) {
              String contact = getTheContact((recognizedText.split(" ")));
              if(recognizedText.contains("whatsapp")){
                  sendWhatsappMessage(contact,"This is a test , please do not reply");
@@ -182,6 +205,25 @@ public class AssistantFragment extends Fragment {
          else {
             speakText("Üzgünüm, bu komutu anlayamadım.");
         }
+    }
+
+    private String getTheQuery(String[] s) {
+        for (int i = 0; i < s.length; i++) {
+            if(s[i].contains("Google") ){
+                return s[++i] + s[++i];
+            }
+        }
+        return null;
+    }
+
+    private String getTheDestinaton(String[] arr) {
+        for(int i = 0 ;i < arr.length;i++){
+            if(arr[i].contains("konum") || arr[i].contains("lokasyon")){
+                return arr[i-2]+arr[i-1]
+                        ;
+            }
+        }
+        return null;
     }
 
     private void sendWhatsappMessage(String contact, String message) {
