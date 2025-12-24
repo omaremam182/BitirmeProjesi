@@ -116,7 +116,7 @@ public class ChatDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void deleteCoversation(long convId) {
+    public void deleteConversation(long convId) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         int rowsAffected = db.delete("conversations","conv_id = ?", new String[]{String.valueOf(convId)});
