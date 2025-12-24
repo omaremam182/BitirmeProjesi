@@ -47,6 +47,8 @@ public class RegisterActivity extends AppCompatActivity {
                 password = passwordField.getText().toString().trim();
                 passwordAgain = passwordAgainFeild.getText().toString().trim();
 
+                registerButton.setEnabled(false);
+
                 // Handle registration logic here (e.g., store user data)
                 // After successful registration, navigate to Login screen or Main Activity
 
@@ -73,27 +75,18 @@ public class RegisterActivity extends AppCompatActivity {
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
                                 FirebaseUser user = mAuth.getCurrentUser();
+                                Toast.makeText(RegisterActivity.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                                finish();
 
                                 // Store email & password in Firestore also #####################
-                                if (user != null) {
-                                    Map<String, Object> userData = new HashMap<>();
-                                    userData.put("email", email);
-                                    userData.put("password",password);
-
-                                    db.collection("users")
-                                            .document(user.getUid())
-                                            .set(userData)
-                                            .addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(RegisterActivity.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
-                                                startActivity(new Intent(RegisterActivity.this, MainActivity.class));
-                                                finish();
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Toast.makeText(RegisterActivity.this, "Error saving user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                System.out.println(e.getMessage());
-                                            });
-                                }
+//                                if (user != null) {
+//                                    Map<String, Object> userData = new HashMap<>();
+//                                    userData.put("email", email);
+//                                    userData.put("password",password);
+//
                             } else {
+                                registerButton.setEnabled(true);
                                 Toast.makeText(RegisterActivity.this, "Registration failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });

@@ -28,64 +28,6 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-//
-//public class GalleryFragment extends Fragment {
-//    ChatDatabase my_db;
-//    private FragmentGalleryBinding binding;
-//
-//    public View onCreateView(@NonNull LayoutInflater inflater,
-//                             ViewGroup container, Bundle savedInstanceState) {
-//        binding = FragmentGalleryBinding.inflate(inflater, container, false);
-//        View root = binding.getRoot();
-//
-//        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-//        String u_email = user.getEmail();
-//
-//        my_db = new ChatDatabase(getContext());
-//
-//        Cursor cr = my_db.getAllConversations(u_email);
-//        List<Conversation> conversations = new ArrayList<>();
-//        while (cr.moveToNext()) {
-//            long convId = cr.getLong(cr.getColumnIndex("conv_id"));
-//            String convTitle = cr.getString(cr.getColumnIndex("conv_title"));
-//            conversations.add(new Conversation(convId, convTitle));
-//        }
-//
-//        // إعداد RecyclerView لعرض المحادثات
-//        RecyclerView recyclerView = binding.recyclerViewConversations;
-//        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-//        ConversationAdapter adapter = new ConversationAdapter(conversations, new ConversationAdapter.OnConversationClickListener() {
-//            @Override
-//            public void onConversationClick(long convId) {
-//                // افتح ChatFragment مع الـ conv_id
-//                openChatFragment(convId);
-//            }
-//        });
-//        recyclerView.setAdapter(adapter);
-//
-//        return root;
-//    }
-//
-//    @Override
-//    public void onDestroyView() {
-//        super.onDestroyView();
-//        binding = null;
-//    }
-//
-//    private void openChatFragment(long convId) {
-//        // إنشاء Bundle لتمرير الـ conv_id
-//        Bundle bundle = new Bundle();
-//        bundle.putLong("conv_id", convId);
-//
-//        // فتح الـ ChatFragment يدويًا باستخدام FragmentTransaction
-//        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-//        ChatFragment chatFragment = new ChatFragment();
-//        chatFragment.setArguments(bundle); // تمرير البيانات (conv_id) للـ ChatFragment
-//        transaction.replace(R.id.mobile_navigation, chatFragment); // استبدال الـ Fragment الحالي بـ ChatFragment
-//        transaction.addToBackStack(null); // لضمان إمكانية الرجوع
-//        transaction.commit();
-//    }
-//}
 
 public class GalleryFragment extends Fragment {
     private ChatDatabase my_db;

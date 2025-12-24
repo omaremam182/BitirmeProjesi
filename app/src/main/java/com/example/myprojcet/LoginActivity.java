@@ -39,6 +39,7 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(LoginActivity.this, "please fill all fields", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                loginButton.setEnabled(false);
 
                 mAuth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener(task -> {
@@ -51,6 +52,7 @@ public class LoginActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
+                                loginButton.setEnabled(true);
                                 Toast.makeText(LoginActivity.this, "Basarisiz Giris!", Toast.LENGTH_SHORT).show();
                                 System.out.println( task.getException().getMessage());
                             }

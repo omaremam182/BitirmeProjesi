@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-android:padding="16dp">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="#F2F2F2">
 
     <LinearLayout
     android:id="@+id/form_container"
@@ -59,7 +60,7 @@ android:padding="16dp">
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/Gray0"
-        android:hint="Enter your password again"
+        android:hint="Enter password again"
         android:textColorHint="@color/hafif_gri"
         android:inputType="textPassword"
         android:layout_marginBottom="16dp"
@@ -80,7 +81,7 @@ android:padding="16dp">
         android:layout_height="wrap_content"
         android:layout_marginTop="7dp"
         android:text="already have an account? Login"
-        android:textColor="#21FFF3"
+        android:textColor="#2196F3"
         android:textSize="16sp"
         android:layout_gravity="center_horizontal"
         android:onClick="navigateToLogin"/>
