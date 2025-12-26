@@ -127,7 +127,7 @@ public class AssistantFragment extends Fragment {
             ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (result != null && !result.isEmpty()) {
                 String recognizedText = result.get(0);
-                sendCommandToAssistantAPI(recognizedText);
+                sendCommandToAssistantAPI(recognizedText.toLowerCase(Locale.ROOT).strip());
             }
         }
     }
@@ -147,7 +147,7 @@ public class AssistantFragment extends Fragment {
                     int classId = result.getClass_id();
                     excuteCommand(classId,recognizedText);
 
-                    Toast.makeText(requireContext(), "baglanma Islemi basarili  "+commandClass, Toast.LENGTH_LONG).show();
+                    Toast.makeText(requireContext(), commandClass, Toast.LENGTH_LONG).show();
                 }
             }
 
