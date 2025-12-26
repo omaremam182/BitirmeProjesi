@@ -8,10 +8,12 @@ import android.os.Bundle;
 import android.provider.AlarmClock;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,10 +33,13 @@ import com.example.myprojcet.deviceControl.WhatsAppOperationsHandler;
 import com.example.myprojcet.deviceControl.ileriZamanliIslem;
 import com.example.myprojcet.deviceControl.BluetoothControl;
 import com.example.myprojcet.deviceControl.WifiControl;
+import com.example.myprojcet.manageRequests.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
 
 public class AssistantFragment extends Fragment {
 
@@ -122,99 +127,189 @@ public class AssistantFragment extends Fragment {
             ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (result != null && !result.isEmpty()) {
                 String recognizedText = result.get(0);
-                // Toast.makeText(getContext(), "Duydum: " + recognizedText, Toast.LENGTH_LONG).show();
-
-               // speakText("Söyledikleriniz şu : " + recognizedText);
-                handleCommand(recognizedText);
+                sendCommandToAssistantAPI(recognizedText);
             }
         }
     }
-    private void handleCommand(String recognizedText) {
-        recognizedText = recognizedText.toLowerCase(Locale.ROOT);
+    private void sendCommandToAssistantAPI(String recognizedText){
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
 
-         if (recognizedText.contains("alarm")) {
-            if(recognizedText.contains("iptal") || recognizedText.contains("sil") || recognizedText.contains("kapat")){
-                Intent intent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
-                getContext().startActivity(intent);
-                return;
+        TextRequest request = new TextRequest(recognizedText);
+
+        apiService.predict(request).enqueue(new retrofit2.Callback<PredictionResponse>() {
+            @Override
+            public void onResponse(Call<PredictionResponse> call,
+                                   retrofit2.Response<PredictionResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+
+                    PredictionResponse result = response.body();
+                    String commandClass = result.getLabel().toLowerCase(Locale.ROOT);
+                    int classId = result.getClass_id();
+                    excuteCommand(classId,recognizedText);
+
+                    Toast.makeText(requireContext(), "baglanma Islemi basarili  "+commandClass, Toast.LENGTH_LONG).show();
+                }
             }
-            DeviceAlarm  deviceAlarm = new DeviceAlarm(getContext());
-            deviceAlarm.setDeviceAlarm(6,20,"This alarm has been created by myproject");
 
-
-         } else if (recognizedText.contains("zamanlayici") || recognizedText.contains("zamanlayıcı") || recognizedText.contains("timer") ) {
-            if(recognizedText.contains("kapat") || recognizedText.contains("durdur")
-                    || recognizedText.contains("iptal") || recognizedText.contains("sil")) {
-                Intent intent = new Intent(AlarmClock.ACTION_SHOW_TIMERS);
-                getContext().startActivity(intent);
-                return;
+            @Override
+            public void onFailure(Call<PredictionResponse> call, Throwable t) {
+                Log.e("API", "Error", t);
             }
+        });
+
+    }
+    private void toggle_Bluetooth(boolean enabled){
+        BluetoothControl bC = new BluetoothControl(getContext());
+        bC.toggleBluetooth(enabled);
+    }
+    public void excuteCommand(int predictedClassNumber, String text) {
+        switch (predictedClassNumber) {
+
+            case 0:
+                // BT_OFF
+                toggle_Bluetooth(false);
+                break;
+
+            case 1:
+                // BT_ON
+                toggle_Bluetooth(true);
+                break;
+
+            case 2:
+                // CALL
+                String contact = getTheContact((text.split(" ")));
+                if (contact != null) {
+                    makePhoneCall(contact);
+                } else
+                    Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                break;
+
+            case 3:
+                // FLASH_OFF
+                toggleFlash(false);
+                break;
+
+            case 4:
+                // FLASH_ON
+                toggleFlash(true);
+                break;
+
+            case 5:
+                // MAPS_SEARCH
+                String dest = getTheDestinaton(text.split(" "));
+                searchInMap(dest);
+                break;
+
+            case 6:
+                // OPEN_APP
+                openApp(text);
+                break;
+
+            case 7:
+                // REMOVE_ALARM
+                toggleAlarm(false);
+                break;
+
+            case 8:
+                // REMOVE_TIMER
+                toggleTimer(false);
+                break;
+
+            case 9:
+                // SET_ALARM
+                toggleAlarm(true);
+                break;
+
+            case 10:
+                // SET_TIMER
+                toggleTimer(true);
+                break;
+
+            case 11:
+                // SMS_SEND
+                String myContact = getTheContact((text.split(" ")));
+                if (myContact != null)
+                    sendSmsToContact(myContact, "This is a test");
+                else
+                    Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                break;
+
+            case 12:
+                // TOGGLE_WIFI
+                toggleWi_Fi(true);
+                break;
+
+            case 13:
+                // WHATSAPP_SEND
+                String wContact = getTheContact((text.split(" ")));
+                sendWhatsappMessage(wContact,"This is a test , please do not reply");
+                break;
+
+            default:
+                // UNKNOWN_COMMAND
+                break;
+        }
+    }
+    private void toggleFlash(boolean enable){
+        FlashHandler flashHandler = new FlashHandler(requireContext());
+        if (enable) {
+            flashHandler.turnFlashlightOn();
+        } else {
+            flashHandler.turnFlashlightOff();
+        }
+    }
+    private void searchInMap(String dest){
+        if(dest != null){
+            MapsHandler mapsHandler = new MapsHandler(requireContext());
+            mapsHandler.search(dest);
+        }
+    }
+    private void openApp(String text){
+        PackageManager pm = requireContext().getPackageManager();
+        List<ApplicationInfo> apps = pm.getInstalledApplications(
+                PackageManager.GET_META_DATA | PackageManager.MATCH_ALL);
+
+        for (ApplicationInfo appInfo : apps) {
+            String appName = pm.getApplicationLabel(appInfo).toString().toLowerCase(Locale.ROOT);
+
+            if (text.contains(appName)) {
+                Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
+                if (launchIntent != null) {
+                    startActivity(launchIntent);
+                    return;
+                }
+            }
+        }
+        speakText("Uygulama bulunamadı: " + text);
+    }
+
+    private void toggleAlarm(boolean enable){
+        if(!enable) {
+            Intent intent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
+            getContext().startActivity(intent);
+        }else {
+            DeviceAlarm deviceAlarm = new DeviceAlarm(getContext());
+            deviceAlarm.setDeviceAlarm(6, 20, "This alarm has been created by myproject");
+        }
+    }
+    private void toggleTimer(boolean enable){
+        if(enable){
             DeviceAlarm timer = new DeviceAlarm(getContext());
             timer.setDeviceTimer(90, "My Project's Timer");
-
-        } else if (recognizedText.contains("konum") || recognizedText.contains("lokasyon") ) {
-             MapsHandler mapsHandler = new MapsHandler(requireContext());
-             String dest = getTheDestinaton(recognizedText.split(" "));
-             if(dest != null){
-                 mapsHandler.search(dest);
-             }
-
-         } else if (recognizedText.contains("flaş")||recognizedText.contains("fener")||recognizedText.contains("flash")) {
-             FlashHandler flashHandler = new FlashHandler(requireContext());
-             if (recognizedText.contains("yak")||recognizedText.contains("aç")|| recognizedText.contains("çalıştır")){
-                 flashHandler.turnFlashlightOn();
-             }else if(recognizedText.contains("söndür")||recognizedText.contains("kapat")){
-                 flashHandler.turnFlashlightOff();
-             }
-
-         } else if ((recognizedText.contains("mesaj")||recognizedText.contains("sms")) && recognizedText.contains("kişi")) {
-             String contact = getTheContact((recognizedText.split(" ")));
-             if(recognizedText.contains("whatsapp")){
-                 sendWhatsappMessage(contact,"This is a test , please do not reply");
-             }
-             else {
-                 if (contact != null)
-                     sendSmsToContact(contact, "This is a test");
-                 else
-                     Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
-             }
-         } else if (recognizedText.contains("ara") && recognizedText.contains("kişi")) {
-             String contact = getTheContact((recognizedText.split(" ")));
-
-             if(contact != null) {
-//                 if(recognizedText.contains("whatsapp")){
-//                     boolean isVideoCall= recognizedText.contains("video");
-//                     callByWhatsapp(contact,isVideoCall);
-//                      return;
-
-                 makePhoneCall(contact);
-
-             }else
-                 Toast.makeText(requireContext(),"Kişi bulunamadı",Toast.LENGTH_LONG).show();
-
-
-         } else if (recognizedText.contains("aç") || recognizedText.contains("başlat")) {
-            openAppByName(recognizedText);
-        }
-         else {
-            speakText("Üzgünüm, bu komutu anlayamadım.");
+        }else{
+            Intent intent = new Intent(AlarmClock.ACTION_SHOW_TIMERS);
+            getContext().startActivity(intent);
         }
     }
-
-    private String getTheQuery(String[] s) {
-        for (int i = 0; i < s.length; i++) {
-            if(s[i].contains("Google") ){
-                return s[++i] + s[++i];
-            }
-        }
-        return null;
+    private void toggleWi_Fi(boolean enable){
+        WifiControl wifiControl = new WifiControl(getContext());
+        wifiControl.toggleWifi(enable);
     }
 
     private String getTheDestinaton(String[] arr) {
         for(int i = 0 ;i < arr.length;i++){
             if(arr[i].contains("konum") || arr[i].contains("lokasyon")){
-                return arr[i-2]+arr[i-1]
-                        ;
+                return arr[i-2]+arr[i-1];
             }
         }
         return null;
@@ -247,48 +342,6 @@ public class AssistantFragment extends Fragment {
     }
 
 
-    private void openAppByName(String spokenText) {
-        PackageManager pm = requireContext().getPackageManager();
-        List<ApplicationInfo> apps = pm.getInstalledApplications(
-                PackageManager.GET_META_DATA | PackageManager.MATCH_ALL);
-
-
-
-        if(spokenText.contains("wi-fi")) {
-            WifiControl wifiControl = new WifiControl(getContext());
-            wifiControl.toggleWifi(true);
-            return;
-
-            // Turn Wi-Fi OFF
-//            wifiControl.toggleWifi(false);
-        } else if (spokenText.contains("bluetooth")) {
-            BluetoothControl bC = new BluetoothControl(getContext());
-            bC.toggleBluetooth(true);
-            return;
-
-        } else if (spokenText.contains("ileri dogru islem")) {
-            ileriZamanliIslem alarmReceiver = new ileriZamanliIslem(getContext());
-            alarmReceiver.setExactAlarm(4,49);
-            return;
-
-        }
-        for (ApplicationInfo appInfo : apps) {
-            String appName = pm.getApplicationLabel(appInfo).toString().toLowerCase(Locale.ROOT);
-
-            if (spokenText.contains(appName)) {
-                Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
-                if (launchIntent != null) {
-                    startActivity(launchIntent);
-//                    speakText(appName + " açılıyor.");
-                    return;
-                }
-            }
-        }
-
-        speakText("Uygulama bulunamadı: " + spokenText);
-    }
-
-
     private void sendSmsDirect(String number, String message) {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.SEND_SMS)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -304,7 +357,6 @@ public class AssistantFragment extends Fragment {
         String phone = contactResolver.findNumberByContact(contactName);
 
         if (phone == null) {
-//            Toast.makeText(getContext(), "Contact not found!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -380,12 +432,6 @@ public class AssistantFragment extends Fragment {
                 SMS_PERMISSION_REQUEST
         );
     }
-//    private void requestReadContactsPermission() {
-//        requestPermissions(
-//                new String[]{Manifest.permission.READ_CONTACTS},
-//                READ_CONTACTS_REQUEST
-//        );
-//    }
 
     private void requestCallPermission() {
         ActivityCompat.requestPermissions(requireActivity(),
