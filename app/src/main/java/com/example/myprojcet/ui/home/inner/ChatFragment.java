@@ -201,8 +201,6 @@ public class ChatFragment extends Fragment {
                 Map<String, String> selectedChild = childData.get(groupPosition).get(childPosition);
                 String itemName = selectedChild.get("Item");
 
-                //Toast.makeText(getContext(), "You clicked: " + itemName, Toast.LENGTH_SHORT).show();
-
                 if(conversation_id == -3)
                     conversation_id = my_db.createConversation(u_email);
 

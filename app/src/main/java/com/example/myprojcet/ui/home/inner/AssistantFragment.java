@@ -1,10 +1,13 @@
 package com.example.myprojcet.ui.home.inner;
 
 import android.Manifest;
+import java.util.function.Consumer;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.AlarmClock;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
@@ -22,6 +25,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.example.myprojcet.BuildConfig;
 import com.example.myprojcet.R;
 import com.example.myprojcet.deviceControl.ContactResolver;
 import com.example.myprojcet.deviceControl.DeviceAlarm;
@@ -35,10 +39,22 @@ import com.example.myprojcet.deviceControl.BluetoothControl;
 import com.example.myprojcet.deviceControl.WifiControl;
 import com.example.myprojcet.manageRequests.*;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import retrofit2.Call;
 
 public class AssistantFragment extends Fragment {
@@ -48,8 +64,10 @@ public class AssistantFragment extends Fragment {
     private static final int SMS_PERMISSION_REQUEST = 102;
     private static final int READ_CONTACTS_REQUEST = 103;
     private static final int PERMISSION_REQUEST_CALL = 105;
+    private static final String ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String API_KEY = BuildConfig.GROQ_API_KEY;
 
-
+    private OkHttpClient client = new OkHttpClient();
 
     private TextToSpeech tts;
     private ImageButton listenButton;
@@ -227,11 +245,19 @@ public class AssistantFragment extends Fragment {
 
             case 11:
                 // SMS_SEND
-                String myContact = getTheContact((text.split(" ")));
-                if (myContact != null)
-                    sendSmsToContact(myContact, "This is a test");
-                else
-                    Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                sendCommandToGroq(text, "sms", result -> {
+                    // This code runs on the main thread
+                    System.out.println("Result: " + result);
+
+                    if (result.containsKey("alici") && result.containsKey("metin")) {
+                        String myContact = result.get("alici");
+
+                        if (myContact != null) {
+                            sendSmsToContact(myContact, result.get("metin"));
+                        }else
+                            Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                }});
+
                 break;
 
             case 12:
@@ -241,8 +267,19 @@ public class AssistantFragment extends Fragment {
 
             case 13:
                 // WHATSAPP_SEND
-                String wContact = getTheContact((text.split(" ")));
-                sendWhatsappMessage(wContact,"This is a test , please do not reply");
+
+                sendCommandToGroq(text, "wtsapp", result -> {
+                    // This code runs on the main thread
+                    System.out.println("Result Whatsapp: " + result);
+
+                    if (result.containsKey("alici") && result.containsKey("metin")) {
+                        String myContact = result.get("alici");
+
+                        if (myContact != null) {
+                            sendWhatsappMessage(myContact, result.get("metin"));
+                        }else
+                            Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                    }});
                 break;
 
             default:
@@ -250,6 +287,102 @@ public class AssistantFragment extends Fragment {
                 break;
         }
     }
+    private void sendCommandToGroq(String userMessage, String type, OnSmsParsedListener listener) {
+        new Thread(() -> {
+            Map<String, String> sonCevap = new HashMap<>();
+            try {
+                // 1️⃣ System prompt
+                String systemPrompt = "Kullanıcı bir SMS gönderme komutu verdi.\n" +
+                        "Aşağıdaki metinden alıcıyı ve mesaj içeriğini çıkar.\n\n" +
+                        "Şema:\n" +
+                        "{\n" +
+                        "  \"recipient\": string | null,\n" +
+                        "  \"message\": string | null\n" +
+                        "}\n\n" +
+                        "Kurallar:\n" +
+                        "- Çıktı SADECE geçerli JSON olsun.\n" +
+                        "- Eğer bilgi yoksa null yaz.\n" +
+                        "- Yorum, açıklama veya ek metin ekleme.\n" +
+                        "- message alanı, alıcıya gönderilecek DOĞRUDAN mesaj metni olmalı.\n" +
+                        "- \"yaz\", \"söyle\", \"ilet\", \"de\" gibi fiiller message alanına dahil edilmemeli.\n" +
+                        "- Dolaylı anlatım varsa (\"… olduğunu / … yapacağını\"), message alanında doğrudan cümleye dönüştür.\n\n" +
+                        "Örnekler:\n\n" +
+                        "Metin: Anneme eve geç geleceğimi yaz\n" +
+                        "{\n" +
+                        "  \"recipient\": \"Anne\", \n" +
+                        "  \"message\": \"Eve geç geleceğim\"\n" +
+                        "}\n\n" +
+                        "Metin: Ali’ye toplantının iptal olduğunu söyle\n" +
+                        "{\n" +
+                        "  \"recipient\": \"Ali\",\n" +
+                        "  \"message\": \"Toplantı iptal oldu\"\n" +
+                        "}\n\n" +
+                        "Metin: Ahmede whatsapptan yaz\n" +
+                        "{\n" +
+                        "  \"recipient\": \"Ahmet\",\n" +
+                        "  \"message\": \"null\"\n" +
+                        "}";
+
+                // 2️⃣ Model için JSON oluştur
+                JSONObject json = new JSONObject();
+                json.put("model", "openai/gpt-oss-20b");
+
+                JSONArray messages = new JSONArray();
+
+                JSONObject systemMsg = new JSONObject();
+                systemMsg.put("role", "system");
+                systemMsg.put("content", systemPrompt);
+                messages.put(systemMsg);
+
+                JSONObject userMsg = new JSONObject();
+                userMsg.put("role", "user");
+                userMsg.put("content", userMessage);
+                messages.put(userMsg);
+
+                json.put("messages", messages);
+
+                // 3️⃣ Request body
+                RequestBody body = RequestBody.create(
+                        json.toString(),
+                        MediaType.parse("application/json")
+                );
+
+                Request request = new Request.Builder()
+                        .url(ENDPOINT)
+                        .addHeader("Authorization", "Bearer " + API_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .post(body)
+                        .build();
+
+                // 4️⃣ Send request
+                Response response = client.newCall(request).execute();
+                String responseBody = response.body().string();
+
+                JSONObject jsonResponse = new JSONObject(responseBody);
+                String reply = jsonResponse
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content");
+
+                // 5️⃣ Parse JSON
+                JSONObject smsData = new JSONObject(reply);
+                String recipient = smsData.optString("recipient", "null");
+                String message = smsData.optString("message", "null");
+
+                if (!recipient.equals("null")) sonCevap.put("alici", recipient);
+                if (!message.equals("null")) sonCevap.put("metin", message);
+
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+            }
+
+            // 6️⃣ Return result on main thread
+            new Handler(Looper.getMainLooper()).post(() -> listener.onResult(sonCevap));
+
+        }).start();
+    }
+
     private void toggleFlash(boolean enable){
         FlashHandler flashHandler = new FlashHandler(requireContext());
         if (enable) {
@@ -438,5 +571,7 @@ public class AssistantFragment extends Fragment {
                 new String[]{Manifest.permission.CALL_PHONE},
                 PERMISSION_REQUEST_CALL);
     }
-
+    public interface OnSmsParsedListener {
+        void onResult(Map<String, String> result);
+    }
 }
