@@ -8,6 +8,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ChatDatabase extends SQLiteOpenHelper {
 
@@ -130,6 +133,34 @@ public class ChatDatabase extends SQLiteOpenHelper {
 
         db.close();
     }
+    public List<String> getLastConversationTitles(String userEmail, int limit) {
+
+        List<String> titles = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query =
+                "SELECT conv_title " +
+                        "FROM conversations " +
+                        "WHERE user_email = ? " +
+                        "AND conv_title IS NOT NULL AND conv_title != '' " +
+                        "ORDER BY last_message_sended_at DESC " +
+                        "LIMIT ?";
+
+        Cursor cursor = db.rawQuery(
+                query,
+                new String[]{userEmail, String.valueOf(limit)}
+        );
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                titles.add(cursor.getString(0));
+            }
+            cursor.close();
+        }
+
+        return titles;
+    }
+
 
     // ---------------------------------------
     // MESSAGES

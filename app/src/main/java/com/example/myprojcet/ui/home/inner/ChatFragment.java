@@ -122,76 +122,79 @@ public class ChatFragment extends Fragment {
 
 
 
-        if(messages.isEmpty()){
-            Map<String, String> group1 = new HashMap<>();
-            group1.put("Group", "Spor");
-            groupData.add(group1);
+        if(messages.isEmpty()) {
+            if (my_db.getAllConversations(u_email).getCount() >= 3) {
+                generateDynamicSuggestions(my_db.getLastConversationTitles(u_email, 3));
+            } else {
+                Map<String, String> group1 = new HashMap<>();
+                group1.put("Group", "Spor");
+                groupData.add(group1);
 
-            List<Map<String, String>> group1Children = new ArrayList<>();
+                List<Map<String, String>> group1Children = new ArrayList<>();
 
-            Map<String, String> child1 = new HashMap<>();
-            child1.put("Item", "Futbol");
-            group1Children.add(child1);
+                Map<String, String> child1 = new HashMap<>();
+                child1.put("Item", "Futbol");
+                group1Children.add(child1);
 
-            Map<String, String> child2 = new HashMap<>();
-            child2.put("Item", "Dünya kupası");
-            group1Children.add(child2);
+                Map<String, String> child2 = new HashMap<>();
+                child2.put("Item", "Dünya kupası");
+                group1Children.add(child2);
 
-            childData.add(group1Children);
+                childData.add(group1Children);
 
-            Map<String, String> group2 = new HashMap<>();
-            group2.put("Group", "Teknoloji");
-            groupData.add(group2);
+                Map<String, String> group2 = new HashMap<>();
+                group2.put("Group", "Teknoloji");
+                groupData.add(group2);
 
-            List<Map<String, String>> group2Children = new ArrayList<>();
+                List<Map<String, String>> group2Children = new ArrayList<>();
 
-            Map<String, String> childA = new HashMap<>();
-            childA.put("Item", "Yapay Zeka");
-            group2Children.add(childA);
+                Map<String, String> childA = new HashMap<>();
+                childA.put("Item", "Yapay Zeka");
+                group2Children.add(childA);
 
-            Map<String, String> childB = new HashMap<>();
-            childB.put("Item", "Yazılım");
-            group2Children.add(childB);
+                Map<String, String> childB = new HashMap<>();
+                childB.put("Item", "Yazılım");
+                group2Children.add(childB);
 
-            Map<String, String> group3 = new HashMap<>();
-            group3.put("Group", "Tıp");
-            groupData.add(group3);
-            childData.add(group2Children);
-
-
-            List<Map<String, String>> group3Children = new ArrayList<>();
-
-            Map<String, String> child3A = new HashMap<>();
-            child3A.put("Item", "Kardiyoloji");
-            group3Children.add(child3A);
-
-            Map<String, String> child3B = new HashMap<>();
-            child3B.put("Item", "Nöroloji");
-            group3Children.add(child3B);
-            childData.add(group3Children);
-
-            ExpandableListAdapter expandableListAdapter =
-                    new SimpleExpandableListAdapter(
-                            getContext(),
-                            groupData,
-                            android.R.layout.simple_expandable_list_item_1,
-                            new String[]{"Group"},
-                            new int[]{android.R.id.text1},
-                            childData,
-                            android.R.layout.simple_list_item_1,
-                            new String[]{"Item"},
-                            new int[]{android.R.id.text1}
-                    );
-
-            expandableListView.setAdapter(expandableListAdapter);
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) expandableListView.getLayoutParams();
-            params.gravity = Gravity.CENTER;
-            expandableListView.setLayoutParams(params);
-            expandableListView.setVisibility(View.VISIBLE);
+                Map<String, String> group3 = new HashMap<>();
+                group3.put("Group", "Tıp");
+                groupData.add(group3);
+                childData.add(group2Children);
 
 
+                List<Map<String, String>> group3Children = new ArrayList<>();
+
+                Map<String, String> child3A = new HashMap<>();
+                child3A.put("Item", "Kardiyoloji");
+                group3Children.add(child3A);
+
+                Map<String, String> child3B = new HashMap<>();
+                child3B.put("Item", "Nöroloji");
+                group3Children.add(child3B);
+                childData.add(group3Children);
+
+                ExpandableListAdapter expandableListAdapter =
+                        new SimpleExpandableListAdapter(
+                                getContext(),
+                                groupData,
+                                android.R.layout.simple_expandable_list_item_1,
+                                new String[]{"Group"},
+                                new int[]{android.R.id.text1},
+                                childData,
+                                android.R.layout.simple_list_item_1,
+                                new String[]{"Item"},
+                                new int[]{android.R.id.text1}
+                        );
+
+                expandableListView.setAdapter(expandableListAdapter);
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) expandableListView.getLayoutParams();
+                params.gravity = Gravity.CENTER;
+                expandableListView.setLayoutParams(params);
+                expandableListView.setVisibility(View.VISIBLE);
+
+
+            }
         }
-
 
         expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
@@ -204,11 +207,10 @@ public class ChatFragment extends Fragment {
                 if(conversation_id == -3)
                     conversation_id = my_db.createConversation(u_email);
 
-                String text =  itemName+ " alanindaki son gelişmeler nelerdir";
-                addMessage(text, true);
+                addMessage(itemName, true);
 
-                my_db.insertMessage(conversation_id,"user",text);
-                sendMessageToGroq(text,conversation_id);
+                my_db.insertMessage(conversation_id,"user",itemName);
+                sendMessageToGroq(itemName,conversation_id);
 
                 return true;
             }
@@ -290,6 +292,121 @@ public class ChatFragment extends Fragment {
 
         return view;
     }
+    private void generateDynamicSuggestions(List<String> titles) {
+
+        new Thread(() -> {
+            try {
+                // Convert titles to text block
+                StringBuilder titlesText = new StringBuilder();
+                for (String t : titles) {
+                    titlesText.append("- ").append(t).append("\n");
+                }
+
+                JSONArray messages = new JSONArray();
+
+                JSONObject systemMsg = new JSONObject();
+                systemMsg.put("role", "system");
+                systemMsg.put("content",
+                        "You generate chat suggestion categories.\n\n" +
+                                "Rules:\n" +
+                                "- Use the SAME language as the conversation titles.\n" +
+                                "- Create 3 groups.\n" +
+                                "- Each group must have 2 short suggestions.\n" +
+                                "- Suggestions must be suitable as chat starters.\n" +
+                                "- Group name should be Expressive of its items.\n" +
+                                "- Do NOT explain anything.\n\n" +
+                                "Output format (STRICT JSON):\n" +
+                                "{\n" +
+                                "  \"groups\": [\n" +
+                                "    {\"group\": \"GroupName\", \"items\": [\"Item1\", \"Item2\"]}\n" +
+                                "  ]\n" +
+                                "}"
+                );
+
+                JSONObject userMsg = new JSONObject();
+                userMsg.put("role", "user");
+                userMsg.put("content",
+                        "Conversation titles:\n" + titlesText.toString()
+                );
+
+                messages.put(systemMsg);
+                messages.put(userMsg);
+
+                JSONObject json = new JSONObject();
+                json.put("model", "openai/gpt-oss-20b");
+                json.put("messages", messages);
+
+                RequestBody body = RequestBody.create(
+                        json.toString(),
+                        MediaType.parse("application/json")
+                );
+
+                Request request = new Request.Builder()
+                        .url(ENDPOINT)
+                        .addHeader("Authorization", "Bearer " + API_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .post(body)
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                String responseBody = response.body().string();
+
+                JSONObject root = new JSONObject(
+                        new JSONObject(responseBody)
+                                .getJSONArray("choices")
+                                .getJSONObject(0)
+                                .getJSONObject("message")
+                                .getString("content")
+                );
+
+                JSONArray groups = root.getJSONArray("groups");
+
+                // Clear old data
+                groupData.clear();
+                childData.clear();
+
+                for (int i = 0; i < groups.length(); i++) {
+                    JSONObject g = groups.getJSONObject(i);
+
+                    Map<String, String> groupMap = new HashMap<>();
+                    groupMap.put("Group", g.getString("group"));
+                    groupData.add(groupMap);
+
+                    List<Map<String, String>> children = new ArrayList<>();
+                    JSONArray items = g.getJSONArray("items");
+
+                    for (int j = 0; j < items.length(); j++) {
+                        Map<String, String> childMap = new HashMap<>();
+                        childMap.put("Item", items.getString(j));
+                        children.add(childMap);
+                    }
+
+                    childData.add(children);
+                }
+
+                requireActivity().runOnUiThread(() -> {
+                    ExpandableListAdapter adapter =
+                            new SimpleExpandableListAdapter(
+                                    getContext(),
+                                    groupData,
+                                    android.R.layout.simple_expandable_list_item_1,
+                                    new String[]{"Group"},
+                                    new int[]{android.R.id.text1},
+                                    childData,
+                                    android.R.layout.simple_list_item_1,
+                                    new String[]{"Item"},
+                                    new int[]{android.R.id.text1}
+                            );
+
+                    expandableListView.setAdapter(adapter);
+                    expandableListView.setVisibility(View.VISIBLE);
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
     private void addMessage(String text, boolean isUser) {
         expandableListView.setVisibility(View.GONE);
@@ -298,8 +415,79 @@ public class ChatFragment extends Fragment {
         adapter.notifyItemInserted(messages.size() - 1);
         recyclerView.scrollToPosition(messages.size() - 1);
     }
+    private void generateConversationTitle(String firstUserMessage, long conv_id) {
+
+        new Thread(() -> {
+            try {
+                JSONArray messages = new JSONArray();
+
+                // SYSTEM RULES
+                JSONObject systemMsg = new JSONObject();
+                systemMsg.put("role", "system");
+                systemMsg.put("content",
+                        "You generate conversation titles.\n\n" +
+                                "Rules:\n" +
+                                "- Generate a VERY short title (maximum 3 words).\n" +
+                                "- Use the SAME language as the user's message.\n" +
+                                "- Do NOT add punctuation.\n" +
+                                "- Do NOT add quotes.\n" +
+                                "- Do NOT explain anything.\n" +
+                                "- Return ONLY the title text."
+                );
+
+                // USER INPUT
+                JSONObject userMsg = new JSONObject();
+                userMsg.put("role", "user");
+                userMsg.put("content",
+                        "User message:\n\"" + firstUserMessage + "\""
+                );
+
+                messages.put(systemMsg);
+                messages.put(userMsg);
+
+                JSONObject json = new JSONObject();
+                json.put("model", "openai/gpt-oss-20b");
+                json.put("messages", messages);
+
+                RequestBody body = RequestBody.create(
+                        json.toString(),
+                        MediaType.parse("application/json")
+                );
+
+                Request request = new Request.Builder()
+                        .url(ENDPOINT)
+                        .addHeader("Authorization", "Bearer " + API_KEY)
+                        .addHeader("Content-Type", "application/json")
+                        .post(body)
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                String responseBody = response.body().string();
+
+                JSONObject jsonResponse = new JSONObject(responseBody);
+                String title = jsonResponse
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content")
+                        .trim();
+
+                // Final safety check
+                if (title.isEmpty()) {
+                    title = firstUserMessage.split(" ")[0];
+                }
+
+                my_db.updateConvTitle(conv_id, title);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
     private void sendMessageToGroq(String userMessage,long conv_id) {
+        if(conversationHistory.isEmpty())
+            generateConversationTitle(userMessage,conv_id);
         new Thread(() -> {
             try {
                 JSONObject userMsg = new JSONObject();
@@ -349,6 +537,7 @@ public class ChatFragment extends Fragment {
                 e.printStackTrace();
                 requireActivity().runOnUiThread(() ->
                         addMessage("Error: " + e.getMessage(), false));
+
             }
         }).start();
     }

@@ -379,7 +379,6 @@ public class AssistantFragment extends Fragment {
             Map<String, String> sonCevap = new HashMap<>();
             try {
 
-                // 2️⃣ Model için JSON oluştur
                 JSONObject json = new JSONObject();
                 json.put("model", "openai/gpt-oss-20b");
 
@@ -397,7 +396,7 @@ public class AssistantFragment extends Fragment {
 
                 json.put("messages", messages);
 
-                // 3️⃣ Request body
+                //  Request body
                 RequestBody body = RequestBody.create(
                         json.toString(),
                         MediaType.parse("application/json")
@@ -410,7 +409,7 @@ public class AssistantFragment extends Fragment {
                         .post(body)
                         .build();
 
-                // 4️⃣ Send request
+                //  Send request
                 Response response = client.newCall(request).execute();
                 if (!response.isSuccessful() || response.body() == null) {
                     return ; // default null'larla döner
@@ -431,14 +430,14 @@ public class AssistantFragment extends Fragment {
 
 
                 if(type.equals("msg")){
-
                     if (!result.isNull("recipient")) {
                         sonCevap.put("recipient", result.getString("recipient"));
                     }
                     if (!result.isNull("message")) {
                         sonCevap.put("message", result.getString("message"));
                     }
-                } else if (type.equals("call")) {
+                }
+                else if (type.equals("call")) {
                     if (!result.isNull("contact")) {
                         sonCevap.put("contact", result.getString("contact"));
                     }
