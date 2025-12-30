@@ -72,49 +72,62 @@ public class AssistantFragment extends Fragment {
             "Görevin, kullanıcının sesli arama komutundan aranacak kişi adını veya telefon numarasını çıkarmaktır.\n" +
             "\n" +
             "Kurallar:\n" +
-            "- Eğer aranacak kişi adı açıkça geçiyorsa, \"contact\" alanını doldur.\n" +
-            "- Eğer ambulans, polis, itfaiye gibi sabit bir numara isteniyorsa, \"number\" alanını doldur.\n" +
-            "- Eğer kişi adı veya numara tespit edilemiyorsa her iki alanı da null yap.\n" +
-            "- Açıklama, yorum veya ek metin ekleme.\n" +
             "- Sadece JSON çıktısı üret.\n" +
+            "- Eğer aranacak kişinin adı verilmişse \"contact\" alanını içeriğini doldur.\n" +
+            "- Eğer ambulans, polis, itfaiye gibi sabit bir numara isteniyorsa, \"number\" alanının içeriğini doldur.\n" +
+            "- Eğer kişi adı veya numara tespit edilemiyorsa her iki alanı da null yap.\n" +
+            "- JSON çıktısında her durumda numara ve contact alanları bulunacak ama içerikleri duruma göre değişebilir\n"+
+            "- Açıklama, yorum veya ek metin ekleme.\n" +
             "\n" +
             "Çıktı formatı (zorunlu):\n" +
             "{\n" +
             "  \"contact\": string | null,\n" +
             "  \"number\": string | null\n" +
             "}\n" +
-            "\n" +
-            "Aşağıdaki örnekler sadece açıklama amaçlıdır, çıktı olarak ASLA tekrar edilmemelidir.\n" +
-            "\n" +
+             "\n" +
             "Örnekler:\n" +
             "\n" +
             "Metin: Annemi ara\n" +
-            "Cevap:\n" +
             "{\n" +
             "  \"contact\": \"Anne\",\n" +
             "  \"number\": null\n" +
             "}\n" +
             "\n" +
             "Metin: Ambulansı ara\n" +
-            "Cevap:\n" +
             "{\n" +
             "  \"contact\": null,\n" +
             "  \"number\": \"112\"\n" +
-            "}\n" +
-            "\n" +
-            "Metin: Ali'yi ara\n" +
-            "Cevap:\n" +
-            "{\n" +
-            "  \"contact\": \"Ali\",\n" +
-            "  \"number\": null\n" +
-            "}\n" +
-            "\n" +
-            "Metin: Birini ara\n" +
-            "Cevap:\n" +
-            "{\n" +
-            "  \"contact\": null,\n" +
-            "  \"number\": null\n" +
             "}\n";
+    String SMS_systemPrompt = "Kullanıcı bir SMS gönderme komutu verdi.\n" +
+            "Aşağıdaki metinden alıcıyı ve mesaj içeriğini çıkar.\n\n" +
+            "Şema:\n" +
+            "{\n" +
+            "  \"recipient\": string | null,\n" +
+            "  \"message\": string | null\n" +
+            "}\n\n" +
+            "Kurallar:\n" +
+            "- Çıktı SADECE geçerli JSON olsun.\n" +
+            "- Eğer bilgi yoksa null yaz.\n" +
+            "- Yorum, açıklama veya ek metin ekleme.\n" +
+            "- message alanı, alıcıya gönderilecek DOĞRUDAN mesaj metni olmalı.\n" +
+            "- \"yaz\", \"söyle\", \"ilet\", \"de\" gibi fiiller message alanına dahil edilmemeli.\n" +
+            "- Dolaylı anlatım varsa (\"… olduğunu / … yapacağını\"), message alanında doğrudan cümleye dönüştür.\n\n" +
+            "Örnekler:\n\n" +
+            "Metin: Anneme eve geç geleceğimi yaz\n" +
+            "{\n" +
+            "  \"recipient\": \"Anne\", \n" +
+            "  \"message\": \"Eve geç geleceğim\"\n" +
+            "}\n\n" +
+            "Metin: Ali’ye toplantının iptal olduğunu söyle\n" +
+            "{\n" +
+            "  \"recipient\": \"Ali\",\n" +
+            "  \"message\": \"Toplantı iptal oldu\"\n" +
+            "}\n\n" +
+            "Metin: Ahmede whatsapptan yaz\n" +
+            "{\n" +
+            "  \"recipient\": \"Ahmet\",\n" +
+            "  \"message\": \"null\"\n" +
+            "}";
     private TextToSpeech tts;
     private ImageButton listenButton;
     private SmsSender smsSender;
@@ -241,19 +254,38 @@ public class AssistantFragment extends Fragment {
 
             case 2:
                 // CALL
-                new Thread(() -> {
-                    Map<String, String> result = getTheContactOrNumber(text);
+//                new Thread(() -> {
+//                    Map<String, String> result = getTheContactOrNumber(text);
+//
+//                    String contact = result.get("contact");
+//                    String number = result.get("number");
+//                    Log.d("Contact","Contact : " +contact);
+//
+//                    if (contact != null) {
+//                        makePhoneCall(contact,false);
+//                    } else if (number != null) {
+//                        makePhoneCall(number, true);
+//                    }
+//                }).start();
+                sendCommandToGroq(text,CALL_systemPrompt, "call", result -> {
+                    // This code runs on the main thread
+                    System.out.println("Result: " + result);
+                    String myContact = null;
+                    String number = null;
 
-                    String contact = result.get("contact");
-                    String number = result.get("number");
-                    Log.d("Contact","Contact : " +contact);
+                    if (result.containsKey("contact"))
+                         myContact = result.get("contact");
+                    if(result.containsKey("number"))
+                         number = result.get("number");
 
-                    if (contact != null) {
-                        makePhoneCall(contact,false);
-                    } else if (number != null) {
-                        makePhoneCall(number, true);
-                    }
-                }).start();
+                        if (myContact != null) {
+                            makePhoneCall(myContact,false);
+                        }else if (number != null) {
+                            makePhoneCall(number, true);
+                        }else
+                            Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
+                });
+
                 break;
 
             case 3:
@@ -299,15 +331,15 @@ public class AssistantFragment extends Fragment {
 
             case 11:
                 // SMS_SEND
-                sendCommandToGroq(text, "msg", result -> {
+                sendCommandToGroq(text,SMS_systemPrompt, "msg", result -> {
                     // This code runs on the main thread
                     System.out.println("Result: " + result);
 
-                    if (result.containsKey("alici") && result.containsKey("metin")) {
-                        String myContact = result.get("alici");
+                    if (result.containsKey("recipient") && result.containsKey("message")) {
+                        String myContact = result.get("recipient");
 
                         if (myContact != null) {
-                            sendSmsToContact(myContact, result.get("metin"));
+                            sendSmsToContact(myContact, result.get("message"));
                         }else
                             Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
                 }});
@@ -322,15 +354,15 @@ public class AssistantFragment extends Fragment {
             case 13:
                 // WHATSAPP_SEND
 
-                sendCommandToGroq(text, "msg", result -> {
+                sendCommandToGroq(text,SMS_systemPrompt, "msg", result -> {
                     // This code runs on the main thread
                     System.out.println("Result Whatsapp: " + result);
 
-                    if (result.containsKey("alici") && result.containsKey("metin")) {
-                        String myContact = result.get("alici");
+                    if (result.containsKey("recipient") && result.containsKey("message")) {
+                        String myContact = result.get("recipient");
 
                         if (myContact != null) {
-                            sendWhatsappMessage(myContact, result.get("metin"));
+                            sendWhatsappMessage(myContact, result.get("message"));
                         }else
                             Toast.makeText(requireContext(), "Kişi bulunamadı", Toast.LENGTH_LONG).show();
                     }});
@@ -342,109 +374,10 @@ public class AssistantFragment extends Fragment {
         }
     }
 
-    private Map<String,String> getTheContactOrNumber(String userMessage){
-        Map<String, String> aranacakKisi = new HashMap<>();
-        aranacakKisi.put("contact", null);
-        aranacakKisi.put("number", null);
-
-        try {
-
-                JSONObject json = new JSONObject();
-                json.put("model", "openai/gpt-oss-20b");
-
-                JSONArray messages = new JSONArray();
-
-                JSONObject systemMsg = new JSONObject();
-                systemMsg.put("role", "system");
-                systemMsg.put("content", CALL_systemPrompt);
-                messages.put(systemMsg);
-
-                JSONObject userMsg = new JSONObject();
-                userMsg.put("role", "user");
-                userMsg.put("content", userMessage);
-                messages.put(userMsg);
-
-                json.put("messages", messages);
-
-                RequestBody body = RequestBody.create(
-                        json.toString(),
-                        MediaType.parse("application/json")
-                );
-
-                Request request = new Request.Builder()
-                        .url(ENDPOINT)
-                        .addHeader("Authorization", "Bearer " + API_KEY)
-                        .addHeader("Content-Type", "application/json")
-                        .post(body)
-                        .build();
-
-                Response response = client.newCall(request).execute();
-                if (!response.isSuccessful() || response.body() == null) {
-                    return aranacakKisi; // default null'larla döner
-                }
-
-                String responseBody = response.body().string();
-
-                JSONObject jsonResponse = new JSONObject(responseBody);
-                String reply = jsonResponse
-                        .getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
-                        .trim();
-
-                JSONObject result = new JSONObject(reply);
-
-                if (!result.isNull("contact")) {
-                    aranacakKisi.put("contact", result.getString("contact"));
-                }
-
-                if (!result.isNull("number")) {
-                    aranacakKisi.put("number", result.getString("number"));
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return aranacakKisi;
-        }
-
-    private void sendCommandToGroq(String userMessage, String type, OnSmsParsedListener listener) {
+    private void sendCommandToGroq(String userMessage,String prompt, String type, OnSmsParsedListener listener) {
         new Thread(() -> {
             Map<String, String> sonCevap = new HashMap<>();
             try {
-                // 1️⃣ System prompt
-                String SMS_systemPrompt = "Kullanıcı bir SMS gönderme komutu verdi.\n" +
-                        "Aşağıdaki metinden alıcıyı ve mesaj içeriğini çıkar.\n\n" +
-                        "Şema:\n" +
-                        "{\n" +
-                        "  \"recipient\": string | null,\n" +
-                        "  \"message\": string | null\n" +
-                        "}\n\n" +
-                        "Kurallar:\n" +
-                        "- Çıktı SADECE geçerli JSON olsun.\n" +
-                        "- Eğer bilgi yoksa null yaz.\n" +
-                        "- Yorum, açıklama veya ek metin ekleme.\n" +
-                        "- message alanı, alıcıya gönderilecek DOĞRUDAN mesaj metni olmalı.\n" +
-                        "- \"yaz\", \"söyle\", \"ilet\", \"de\" gibi fiiller message alanına dahil edilmemeli.\n" +
-                        "- Dolaylı anlatım varsa (\"… olduğunu / … yapacağını\"), message alanında doğrudan cümleye dönüştür.\n\n" +
-                        "Örnekler:\n\n" +
-                        "Metin: Anneme eve geç geleceğimi yaz\n" +
-                        "{\n" +
-                        "  \"recipient\": \"Anne\", \n" +
-                        "  \"message\": \"Eve geç geleceğim\"\n" +
-                        "}\n\n" +
-                        "Metin: Ali’ye toplantının iptal olduğunu söyle\n" +
-                        "{\n" +
-                        "  \"recipient\": \"Ali\",\n" +
-                        "  \"message\": \"Toplantı iptal oldu\"\n" +
-                        "}\n\n" +
-                        "Metin: Ahmede whatsapptan yaz\n" +
-                        "{\n" +
-                        "  \"recipient\": \"Ahmet\",\n" +
-                        "  \"message\": \"null\"\n" +
-                        "}";
 
                 // 2️⃣ Model için JSON oluştur
                 JSONObject json = new JSONObject();
@@ -454,7 +387,7 @@ public class AssistantFragment extends Fragment {
 
                 JSONObject systemMsg = new JSONObject();
                 systemMsg.put("role", "system");
-                systemMsg.put("content", SMS_systemPrompt);
+                systemMsg.put("content", prompt);
                 messages.put(systemMsg);
 
                 JSONObject userMsg = new JSONObject();
@@ -479,6 +412,10 @@ public class AssistantFragment extends Fragment {
 
                 // 4️⃣ Send request
                 Response response = client.newCall(request).execute();
+                if (!response.isSuccessful() || response.body() == null) {
+                    return ; // default null'larla döner
+                }
+
                 String responseBody = response.body().string();
 
                 JSONObject jsonResponse = new JSONObject(responseBody);
@@ -486,15 +423,29 @@ public class AssistantFragment extends Fragment {
                         .getJSONArray("choices")
                         .getJSONObject(0)
                         .getJSONObject("message")
-                        .getString("content");
+                        .getString("content")
+                        .trim();
 
-                // 5️⃣ Parse JSON
-                JSONObject smsData = new JSONObject(reply);
-                String recipient = smsData.optString("recipient", "null");
-                String message = smsData.optString("message", "null");
+                JSONObject result = new JSONObject(reply);
 
-                if (!recipient.equals("null")) sonCevap.put("alici", recipient);
-                if (!message.equals("null")) sonCevap.put("metin", message);
+
+
+                if(type.equals("msg")){
+
+                    if (!result.isNull("recipient")) {
+                        sonCevap.put("recipient", result.getString("recipient"));
+                    }
+                    if (!result.isNull("message")) {
+                        sonCevap.put("message", result.getString("message"));
+                    }
+                } else if (type.equals("call")) {
+                    if (!result.isNull("contact")) {
+                        sonCevap.put("contact", result.getString("contact"));
+                    }
+                    if (!result.isNull("number")) {
+                        sonCevap.put("number", result.getString("number"));
+                    }
+                }
 
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
