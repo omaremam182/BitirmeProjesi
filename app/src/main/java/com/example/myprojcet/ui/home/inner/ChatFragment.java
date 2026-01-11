@@ -124,7 +124,7 @@ public class ChatFragment extends Fragment {
 
         if(messages.isEmpty()) {
             if (my_db.getAllConversations(u_email).getCount() >= 3) {
-                generateDynamicSuggestions(my_db.getLastConversationTitles(u_email, 3));
+                generateDynamicSuggestions(my_db.getLastConversationTitles(u_email, 15));
             } else {
                 Map<String, String> group1 = new HashMap<>();
                 group1.put("Group", "Spor");

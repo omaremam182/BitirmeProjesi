@@ -10,10 +10,9 @@ public class ApiClient {
     public static Retrofit getClient() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
-                    // 🔥 IMPORTANT
                     // Emulator → 10.0.2.2
-                    // Real phone → YOUR PC IP
-                    .baseUrl("http://10.87.9.98:8000/")
+                    // Real phone → MY PC IP
+                    .baseUrl("http://10.198.70.170:8000/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }

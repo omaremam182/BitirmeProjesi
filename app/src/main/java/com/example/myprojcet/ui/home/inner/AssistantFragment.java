@@ -128,6 +128,26 @@ public class AssistantFragment extends Fragment {
             "  \"recipient\": \"Ahmet\",\n" +
             "  \"message\": \"null\"\n" +
             "}";
+    String mapPrompt = "Aşağıda verilen kullanıcı mesajından haritada aranmak istenen konumu çıkar. \n" +
+            "Şema: { \"yer\": string | null }\n" +
+            "Kurallar:\n" +
+            "\n" +
+            "- Çıktı SADECE geçerli JSON olmalı.\n" +
+            "\n" +
+            "- Açıklama, yorum veya ek metin ekleme.\n" +
+            "\n" +
+            "- Eğer kullanıcı mesajında açık bir konum yoksa, ancak genel bir ifade varsa (ör. \"yakın marketleri bul\"), bu durumda genel arama türünü yaz.\n" +
+            "\n" +
+            "Örnek: \"yakın marketleri bul\" → { \"yer\": \"market\" }\n" +
+            "\n" +
+            "Örnek: \"en yakın hastaneyi göster\" → { \"yer\": \"hastane\" }\n" +
+            "- Birden fazla konum geçiyorsa, en spesifik olanı seç.\n" +
+            "\n" +
+            "Örnek: \"İstanbul Kadıköy’deki park\" → { \"yer\": \"Kadıköy park\" }\n" +
+            "\n" +
+            "- Konum adını sadeleştir, çekim eklerini ve gereksiz kelimeleri kaldır. \n" +
+            "\n" +
+            "- Eğer mesajda hiç konum veya genel yer bilgisi yoksa, \"yer\": null yaz.";
     private TextToSpeech tts;
     private ImageButton listenButton;
     private SmsSender smsSender;
@@ -254,19 +274,7 @@ public class AssistantFragment extends Fragment {
 
             case 2:
                 // CALL
-//                new Thread(() -> {
-//                    Map<String, String> result = getTheContactOrNumber(text);
-//
-//                    String contact = result.get("contact");
-//                    String number = result.get("number");
-//                    Log.d("Contact","Contact : " +contact);
-//
-//                    if (contact != null) {
-//                        makePhoneCall(contact,false);
-//                    } else if (number != null) {
-//                        makePhoneCall(number, true);
-//                    }
-//                }).start();
+
                 sendCommandToGroq(text,CALL_systemPrompt, "call", result -> {
                     // This code runs on the main thread
                     System.out.println("Result: " + result);
@@ -300,12 +308,27 @@ public class AssistantFragment extends Fragment {
 
             case 5:
                 // MAPS_SEARCH
-                String dest = getTheDestinaton(text.split(" "));
-                searchInMap(dest);
-                break;
 
+                sendCommandToGroq(text, mapPrompt, "map", result -> {
+                    // This code runs on the main thread
+                    System.out.println("Result: " + result);
+                    String dest = null;
+
+                    if (result.containsKey("yer"))
+                        dest = result.get("yer");
+
+
+                    if (dest != null) {
+                        searchInMap(dest);
+                    }else {
+                        String dest2 = getTheDestinaton(text.split(" "));
+                        searchInMap(dest2);
+                    }
+                });
+
+            break;
             case 6:
-                // OPEN_APP
+                // OPEN_APP @TODO send it to the model to find app name
                 openApp(text);
                 break;
 
@@ -320,12 +343,12 @@ public class AssistantFragment extends Fragment {
                 break;
 
             case 9:
-                // SET_ALARM
+                // SET_ALARM @TODO send it to the model to find the specific time
                 toggleAlarm(true);
                 break;
 
             case 10:
-                // SET_TIMER
+                // SET_TIMER @TODO send it to the model to find seconds and hours
                 toggleTimer(true);
                 break;
 
@@ -380,7 +403,7 @@ public class AssistantFragment extends Fragment {
             try {
 
                 JSONObject json = new JSONObject();
-                json.put("model", "openai/gpt-oss-20b");
+                json.put("model", "openai/gpt-oss-120b");
 
                 JSONArray messages = new JSONArray();
 
@@ -444,13 +467,18 @@ public class AssistantFragment extends Fragment {
                     if (!result.isNull("number")) {
                         sonCevap.put("number", result.getString("number"));
                     }
+                }else if(type.equals("map")){
+                    if (!result.isNull("yer")) {
+                        sonCevap.put("yer", result.getString("yer"));
+                    }
+
                 }
 
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
 
-            // 6️⃣ Return result on main thread
+            //  Return result on main thread
             new Handler(Looper.getMainLooper()).post(() -> listener.onResult(sonCevap));
 
         }).start();
